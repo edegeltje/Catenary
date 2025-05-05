@@ -4,14 +4,9 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Edward van de Meent
 -/
 import Mathlib.Algebra.Order.Ring.Nat
-import Mathlib.Data.Fintype.Pigeonhole
-import Mathlib.Data.Fintype.Pi
-import Mathlib.Data.Fintype.Sigma
-import Mathlib.Data.Rel
-import Mathlib.Data.Fin.VecNotation
-import Mathlib.Order.OrderIsoNat
+import Mathlib.Data.Fin.Basic
 import Mathlib.Data.List.Destutter
-
+import Mathlib.Data.Rel
 
 /-!
 # Series of a relation
@@ -81,17 +76,25 @@ lemma head_toList {a b : α} (l : a -[r]→* b) (hl : toList l ≠ [] := l.toLis
   cases l <;> rfl
 
 @[simp]
+lemma head?_toList {a b : α} (l : a-[r]→* b) : l.toList.head? = .some a := by
+  cases l <;> rfl
+
+@[simp]
 lemma getLast_toList {a b : α} (l : a -[r]→* b) (hl : toList l ≠ [] := l.toList_ne_nil) :
     l.toList.getLast hl = b := by
   induction l <;> simp_all
+
+@[simp]
+lemma getLast?_toList {a b : α} (l : a -[r]→* b) :
+    l.toList.getLast? = .some b := by
+  induction l with
+  | singleton a => rfl
+  | cons a l hab ih => simp_all [List.getLast?_cons]
 
 lemma chain'_toList {a b : α} (l : a -[r]→* b) : l.toList.Chain' r := by
   induction l with
   | singleton a => simp
   | cons a l hab ih => simp_all [List.chain'_cons', List.head?_eq_head l.toList_ne_nil]
-
--- lemma toList_eq_append {a b : α} (l : a -[r]→* b) (x y : List α) :
--- z
 
 -- @[ext] doesn't work here
 lemma ext {a a' b b' : α} (l : a -[r]→* b) (l' : a' -[r]→* b') :
@@ -137,6 +140,7 @@ lemma length_pos_of_ne {a b : α} (hne : a ≠ b) (x : a -[r]→* b) :
   0 < x.length := by
   cases x <;> simp_all
 
+@[simp]
 lemma length_toList {a b : α} (l : a -[r]→* b) : l.toList.length = l.length + 1 := by
   induction l <;> simp_all
 
@@ -286,6 +290,7 @@ lemma toList_ofRel {a b : α} (hr : r a b) : toList (ofRel hr) = [a,b] := rfl
 lemma nonempty_of_rel {a b : α} (hr : r a b) : Nonempty (a -[r]→* b) :=
   ⟨ofRel hr⟩
 
+
 end ofRel
 
 section snoc
@@ -323,6 +328,26 @@ lemma toList_snoc {a b : α} (x : a -[r]→* b) (c : α) (hr : r b c) :
 lemma length_snoc {a b : α} (x : a -[r]→* b) (c : α) (hr : r  b c) :
     length (snoc x c hr) = length x + 1 := by
   induction x <;> simp_all
+
+lemma snoc_injective {a b : α} (c : α) (hr : r b c) : Function.Injective (snoc (a := a) · c hr) := by
+  intro x x' heq
+  induction x with
+  | singleton a => cases x' with
+    | singleton a => rfl
+    | cons a l hab =>
+      simp only [snoc_singleton, snoc_cons, cons.injEq] at heq
+      cases heq.left
+      cases l <;> simp_all
+  | cons a l hab ih =>
+    cases x' with
+    | singleton a =>
+      simp_all only [forall_true_left, snoc_cons, snoc_singleton, cons.injEq, heq_eq_eq, and_true]
+      cases heq.left
+      cases l <;> simp_all
+    | cons a l hab =>
+      simp_all only [forall_true_left, snoc_cons, cons.injEq, heq_eq_eq, and_true, true_and]
+      cases heq.left
+      exact heq_of_eq (ih (eq_of_heq heq.right))
 
 end snoc
 
@@ -442,9 +467,89 @@ lemma toList_append' {a b b' : α} (x : a -[r]→* b) (y : b -[r]→* b') :
     simp_all only [toList_append, cons_append, toList_cons]
     cases l <;> simp
 
+lemma exists_eq_append_of_toList_eq_append {a b : α} (l : a -[r]→* b) (x y : List α) (hx : x ≠ []):
+  l.toList = x ++ y →
+    ∃ (c : α), ∃ m : a -[r]→* c, ∃ (n : c -[r]→* b), l = m ++ n ∧ m.toList = x ∧ n.toList.tail = y := by
+  induction l generalizing x hx y with
+  | singleton a =>
+    cases x <;> cases y <;> simp_all only [ne_eq, not_true_eq_false, toList_singleton, List.append_nil, List.cons_append,
+      List.cons.injEq, List.nil_eq, List.append_eq_nil_iff]
+    · rintro ⟨rfl, rfl⟩
+      use a, singleton a, singleton a, rfl,rfl
+      rfl
+    · simp only [reduceCtorEq, and_false, IsEmpty.forall_iff]
+  | cons a l hab ih =>
+    simp_all only [ne_eq, toList_cons]
+    obtain ⟨head,tail,rfl⟩ := List.ne_nil_iff_exists_cons.mp hx
+    clear hx
+    simp only [List.cons_append, List.cons.injEq, and_imp]
+    rintro rfl hl
+    cases tail with
+    | nil =>
+      simp only [List.nil_append] at hl
+      use a, singleton a, (cons a l hab)
+      simp_all
+    | cons head tail =>
+      simp_all only [List.cons_append]
+      specialize ih (head :: tail) y (List.cons_ne_nil head tail) rfl
+      obtain ⟨c',m',n',rfl,hm',rfl⟩ := ih
+      use c', (cons a m' hab),n'
+      simp_all
+
+lemma exists_eq_append_of_toList_eq_append' {a b : α} (l : a -[r]→* b) (x y : List α) (hy : y ≠ []):
+  l.toList = x ++ y →
+    ∃ (c : α), ∃ m : a -[r]→* c, ∃ (n : c -[r]→* b), l = m ++ n ∧ m.toList.dropLast = x ∧ n.toList = y := by
+  induction l generalizing x hy y with
+  | singleton a =>
+    simp_all only [ne_eq, toList_singleton]
+    cases y <;> cases x <;> simp [not_true_eq_false,List.nil_append, List.cons_append, List.cons.injEq, List.nil_eq, and_imp,
+      List.append_eq_nil_iff, and_false, IsEmpty.forall_iff] <;> try contradiction
+    rintro rfl rfl
+    use a, (singleton a), singleton a,rfl,rfl
+    rfl
+  | cons a l hab ih =>
+    simp only [toList_cons]
+    cases x with
+    | nil =>
+      rintro rfl
+      use a, singleton a, cons a l hab,rfl,rfl
+      rfl
+    | cons head tail =>
+      simp only [List.cons_append, List.cons.injEq, and_imp]
+      rintro rfl hl
+      obtain ⟨z,ll,lr,rfl,rfl,rfl⟩ := ih tail y hy hl
+      use z, cons a ll hab, lr, rfl
+      simp only [toList_cons, and_true]
+      exact List.dropLast_cons_of_ne_nil (toList_ne_nil ll)
+
+lemma append_right_injective {a b c : α} (l : a -[r]→* b):
+    Function.Injective (α := b -[r]→* c) (l ++ ·) := by
+  intro x y h
+  induction l with
+  | singleton a =>
+    exact h
+  | cons a l hab ih =>
+    simp_all only [cons_append, cons.injEq, heq_eq_eq, and_true, true_and]
+    exact ih h
+
+lemma append_left_injective {a b c : α} (l : b -[r]→* c) :
+    Function.Injective (α := a -[r]→* b) (· ++ l) := by
+  intro x y hxy
+  induction l with
+  | singleton a => simpa using hxy
+  | cons a l hab ih =>
+    simp_all only [← snoc_append]
+    exact snoc_injective _ _ (ih hxy)
+
+@[simp]
+lemma ofRel_append (a : α) {b c: α} (x : b -[r]→* c) (hr : r a b) : ofRel hr ++ x = cons a x hr := rfl
+
+@[simp]
+lemma append_ofRel {a b : α} (x : a -[r]→* b) (c : α) (hr : r b c) : x ++ ofRel hr = snoc x c hr := by
+  induction x <;> simp_all ; rfl
+
 
 end append
-
 
 section reverse
 
@@ -612,6 +717,23 @@ lemma getLast_mem : b ∈ s := ⟨s.length,toFun_length s⟩
 lemma mem_map {β : Type*} {t : Rel β β} (f : r →r t) {y : β} : y ∈ map f s ↔ ∃ x ∈ s, f x = y := by
   simp_all [← mem_toList]
 
+lemma exists_eq_append_of_mem {a b : α} (l : a -[r]→* b) {c : α} (hc : c ∈ l) : ∃ (x : a-[r]→* c), ∃ (y : c -[r]→* b), l = x ++ y := by
+  rw [← mem_toList] at hc
+  induction l with
+  | singleton a =>
+    simp only [toList_singleton, List.mem_cons, List.not_mem_nil, or_false] at hc
+    cases hc
+    use (singleton c), singleton c
+    rfl
+  | cons a l hab ih =>
+    simp only [toList_cons, List.mem_cons] at hc
+    obtain (rfl|hc) := hc
+    · use (singleton c), cons c l hab
+      rfl
+    · obtain ⟨x,y,rfl⟩ := ih hc
+      use (cons a x hab), y
+      rfl
+
 end mem
 end RelSeriesHT
 
@@ -653,7 +775,7 @@ private lemma exists_eq_append_of_append_le' {a b c : α}
       simp only [append_assoc, true_and]
       use (le.ofSubstCons _ hseries hl)
 
-private lemma le_trans {a b : α} (x y z : a -[r]→* b) (hxy : x.le y) (hyz : y.le z) : x.le z := by
+private lemma le_trans {a b : α} {x y z : a -[r]→* b} (hxy : x.le y) (hyz : y.le z) : x.le z := by
   induction hxy with
   | ofSingleton z => exact le.ofSingleton z
   | ofSubstCons hr hseries hle ih =>
@@ -661,16 +783,16 @@ private lemma le_trans {a b : α} (x y z : a -[r]→* b) (hxy : x.le y) (hyz : y
     cases hx' with
     | ofSingleton x =>
       simp_all
-      apply le.ofSubstCons _ (singleton _) (ih _ hyz)
+      apply le.ofSubstCons _ (singleton _) (ih hyz)
     | ofSubstCons hr' hseries hle =>
       simp_all
       rw [← append_assoc]
-      apply le.ofSubstCons _ (hseries ++ _) (ih _ hy')
+      apply le.ofSubstCons _ (hseries ++ _) (ih hy')
 
 instance {a b : α} : Preorder (a -[r]→* b) where
   le := RelSeriesHT.le
   le_refl := le_refl
-  le_trans := le_trans
+  le_trans a b c := le_trans
 
 lemma exists_eq_append_of_append_le {a b c : α}
   (x : a -[r]→* b) (y : b -[r]→* c) (z : a -[r]→* c) (h : (x ++ y) ≤ z) :
@@ -741,6 +863,12 @@ lemma append_left_mono {a b c : α} (l : b -[r]→* c):
     simp_all
     exact cons_le_append _ hr hseries (ih l)
 
+lemma append_le_append {a b c : α} {x x' : a -[r]→* b} (hx : x ≤ x') {y y' : b -[r]→* c} (hy : y ≤ y') :
+  x ++ y ≤ x' ++ y':= by
+  trans x ++ y'
+  · exact append_right_mono _ hy
+  · exact append_left_mono _ hx
+
 @[simp]
 lemma snoc_le_append {a b : α} {x x' : a -[r]→* b}
     (hy : x ≤ x') (c : α) (hr : r b c) (y : b -[r]→* c): snoc x c hr ≤ (x' ++ y) := by
@@ -762,6 +890,7 @@ lemma reverse_mono {a b : α} : Monotone (α := a -[r]→* b) (·.reverse) := by
   | ofSingleton a => simp
   | ofSubstCons hr hseries hle hi => simp_all
 
+/-- reversing a series is a galois-insertion with itself, i.e. reversing is an order isomorphism -/
 def reverse_gi {a b : α} : GaloisInsertion (α := a -[r]→* b) (·.reverse) (·.reverse) where
   choice x _ := x.reverse
   gc := by
@@ -776,6 +905,7 @@ def reverse_gi {a b : α} : GaloisInsertion (α := a -[r]→* b) (·.reverse) (�
   le_l_u := by intros;simp
   choice_eq _ _ := rfl
 
+/-- reversing a series is a galois coinsertion with itself, meaning it is an order isomorphism-/
 def reverse_gci {a b : α} : GaloisCoinsertion (α := a -[r]→* b) (·.reverse) (·.reverse) where
   choice x _ := x.reverse
   gc := by
@@ -801,16 +931,337 @@ lemma reverse_strictMono {a b : α} : StrictMono (α := a -[r]→* b) (·.revers
   exact fun _ => reverse_mono hxy
 -- #check List.Sublist
 
+lemma mem_of_le_of_mem {a b : α} {x y : a -[r]→* b} (hle : x ≤ y) : ∀ ⦃c:α⦄, c ∈ x → c ∈ y := by
+  intro c
+  rw [← mem_toList]
+  induction hle with
+  | ofSingleton x => simp_all
+  | ofSubstCons hr hseries hle ih =>
+    simp only [toList_cons, List.mem_cons, mem_toList, toList_append, List.mem_append]
+    rintro (rfl|h)
+    · simp
+    · simp_all
+
+lemma List.cons_sublist_iff' {a : α} {l₁ l₂ : List α} : (a::l₁).Sublist l₂ ↔ ∃ r₁ r₂, r₁ ++ r₂ = l₂ ∧
+    a ∈ r₁ ∧ l₁.Sublist r₂ ∧ l₁.head? = r₂.head? := by
+  constructor
+  · intro h
+    generalize heq:a :: l₁ = z at *
+    induction h generalizing a l₁ with
+    | slnil => contradiction
+    | cons b h' ih =>
+      cases heq
+      specialize ih rfl
+      obtain ⟨r₁,r₂,rfl,ha,hsub,hhead⟩ := ih
+      use b::r₁,r₂,rfl,List.mem_cons_of_mem b ha,hsub
+    | cons₂ a h' ih =>
+      rename_i l₃ l₄ _
+      cases heq
+      cases l₃ with
+      | nil =>
+        simp_all
+        use a::l₄,[]
+        simp
+      | cons head tail =>
+        specialize ih rfl
+        obtain ⟨r₁,r₂,rfl,hhead,hsub,hhead'⟩ := ih
+        obtain ⟨m,n,rfl,_⟩ := List.eq_append_cons_of_mem hhead
+        use a::m,head::n++r₂
+        simp only [List.cons_append, List.append_assoc, List.mem_cons, true_or,
+          List.cons_sublist_cons, List.head?_cons, and_true, true_and]
+        exact List.sublist_append_of_sublist_right hsub
+  · rintro ⟨r₁,r₂,rfl,hl,hr⟩
+    simp_rw [List.cons_sublist_iff]
+    use r₁, r₂,rfl,hl
+    exact hr.left
+
+
 lemma le_of_toList_sublist_toList {a b : α} (x y : a -[r]→* b)
     (hxy : x.toList.Sublist y.toList) : x ≤ y := by
   induction x with
   | singleton a => simp
   | cons a l hab ih =>
-    simp_all
-    obtain ⟨r1,r2,hy,hmem,hsub⟩ := List.cons_sublist_iff.mp hxy
-    sorry
+    simp_all only [toList_cons]
+    rename_i c d
+    obtain ⟨r1,r2,hy,hmem,hsub,hhead⟩ := List.cons_sublist_iff'.mp hxy
+    clear hxy
+    obtain ⟨c',n,m,rfl,rfl,rfl⟩ := exists_eq_append_of_toList_eq_append' y _ _ (by
+      apply List.ne_nil_of_mem (a := d)
+      apply hsub.mem
+      simp only [mem_toList, getLast_mem]) hy.symm
+    simp only [head?_toList, List.head?_tail] at hhead
+    cases hhead
+    specialize ih _ hsub
+    exact cons_le_append a hab n ih
 
 
 end LE
+
+section IsReduced
+/-- A series `a -[r]→* b` is reduced when all larger chains are longer,
+  or quivalently, when all adjacent elements are distinct. -/
+@[mk_iff]
+class IsReduced {a b : α} (x : a -[r]→* b) : Prop where
+  isReduced (y : a -[r]→* b) : x ≤ y → x.length ≤ y.length
+
+@[simp]
+instance isReduced_singleton (a : α) : (singleton (r := r) a).IsReduced := by
+  simp only [singleton_le, length_singleton, zero_le, imp_self, implies_true, isReduced_iff]
+
+@[simp]
+lemma isReduced_cons_iff (a : α) {b c : α} (x : b -[r]→* c) (hr : r a b) :
+    (cons a x hr).IsReduced ↔ a ≠ b ∧ x.IsReduced := by
+  simp only [isReduced_iff, length_cons, ne_eq]
+  constructor
+  · intro h
+    have : a ≠ b := by
+      rintro rfl
+      specialize h x (cons_le_append a hr (singleton a) (le_refl _))
+      simp at h
+    use this
+    intro y hy
+    specialize h (cons a y hr) (cons_le_append a hr (ofRel hr) hy)
+    simpa using h
+  · rintro ⟨hne,h⟩
+    intro y hy
+    cases hy with
+    | ofSubstCons hr hseries hle =>
+      specialize h _ hle
+      simp only [length_append]
+      have := length_pos_of_ne hne hseries
+      omega
+
+lemma append_isReduced {a b c} {x : a -[r]→* b} {y : b -[r]→* c} :
+    (x ++ y).IsReduced ↔ x.IsReduced ∧ y.IsReduced := by
+  induction x with
+  | singleton a => simp
+  | cons a l hab ih => simp_all [and_assoc]
+
+/-- `x.reduce` computes the canonical reduced form of an `r` series by
+  dropping "reflexive" steps. the result will be equivalent to the original
+  with respect to the ordering of series. -/
+noncomputable def reduce {a b : α} (x : a -[r]→* b) : a -[r]→* b :=
+  open Classical in
+  match x with
+  | .singleton a => .singleton a
+  | @cons _ _ a b c l hr => if h: a = b then copy (reduce l) (h.symm) rfl else .cons a (reduce l) hr
+
+@[simp]
+lemma reduce_singleton (a : α) : reduce (.singleton (r := r) a) = .singleton a := rfl
+
+lemma reduce_cons_of_eq (a : α) {b c : α} (x : b -[r]→* c) (hr : r a b) (hab : a = b) :
+    reduce (cons a x hr) = copy (reduce x) (hab.symm) rfl := by
+  rw [reduce,dif_pos hab]
+
+lemma reduce_cons_of_ne (a : α) {b c : α} (x : b -[r]→* c) (hr : r a b) (hab : a ≠ b) :
+    reduce (cons a x hr) = cons a (reduce x) hr := by
+  rw [reduce,dif_neg hab]
+
+@[simp]
+lemma reduce_cons [DecidableEq α] (a : α) {b c : α} (x : b -[r]→* c) (hr : r a b) :
+    reduce (cons a x hr) =
+      if h : a = b then copy (reduce x) (h.symm) rfl else cons a (reduce x) hr := by
+  rw [reduce]
+  congr
+
+@[simp]
+lemma reduce_append {a b c : α} (x : a -[r]→* b) (y : b -[r]→* c) : reduce (x ++ y) =
+    reduce x ++ reduce y := by
+  induction x with
+  | singleton a => simp
+  | cons a l hab ih =>
+    simp_all
+    rw [reduce,reduce]
+    split <;> rename_i h
+    · cases h
+      simp_all
+    · simp_all
+
+@[simp]
+lemma toList_reduce [DecidableEq α] {a b : α} (x : a -[r]→* b) :
+    toList (reduce x) = x.toList.destutter (· ≠ ·) := by
+  induction x with
+  | singleton a =>
+    simp
+  | cons a l hab ih =>
+    simp only [reduce_cons, ne_eq, toList_cons]
+    cases l with
+    | singleton a =>
+      simp only [reduce_singleton, toList_singleton, List.destutter_pair, ite_not]
+      split <;> simp_all
+    | cons a l hab =>
+      simp only [toList_cons]
+      split <;> simp_all only [ne_eq, toList_cons, toList_copy]
+      · rw [List.destutter_cons_cons]
+        simp_all only [not_true_eq_false, ite_false, reduce_cons]
+        rfl
+      · rw [List.destutter_cons_cons]
+        simp_all only [not_false_eq_true, ite_true, List.cons.injEq, true_and]
+        rw [← List.destutter_cons']
+
+@[simp]
+lemma length_reduce_le_length_self {a b : α} (x : a -[r]→* b) : x.reduce.length ≤ x.length := by
+  induction x with
+  | singleton a => simp
+  | cons a l hab ih =>
+    rw [reduce]
+    split <;> simp_all ; omega
+
+/-- the universal property of `IsReduced` -/
+lemma le_reduce_of_le {a b : α} {x y : a -[r]→* b} (hle : x ≤ y) : x ≤ y.reduce := by
+  induction x with
+  | singleton a => simp
+  | cons a l hab ih =>
+    cases hle with
+    | ofSubstCons hr hseries hle =>
+      rw [reduce_append]
+      exact cons_le_append a hab hseries.reduce (ih hle)
+
+lemma reduce_le_self {a b : α} (x : a -[r]→* b) : x.reduce ≤ x := by
+  induction x with
+  | singleton a => simp
+  | cons a l hab ih =>
+    rw [reduce]
+    split <;> rename_i h
+    · cases h
+      apply le_trans ih
+      exact append_left_mono l (singleton_le (ofRel hab))
+    · exact append_right_mono (ofRel hab) (ih)
+
+@[simp]
+lemma self_le_reduce {a b : α} (x : a -[r]→* b) : x ≤ x.reduce :=
+  le_reduce_of_le (le_refl x)
+
+lemma reduce_mono {a b : α} : Monotone (α := a -[r]→* b) (·.reduce) :=
+  fun a _ hle => le_trans (reduce_le_self a) (le_reduce_of_le hle)
+
+lemma reduce_gc {a b : α} : GaloisConnection (α := a -[r]→* b) (id) (reduce) := by
+  rw [GaloisConnection]
+  simp_all only [id_eq]
+  intro x y
+  refine ⟨le_reduce_of_le,(le_trans · (reduce_le_self y))⟩
+
+lemma reduce_le_reduce_iff {a b : α} (x y : a -[r]→* b) : x ≤ y ↔ x.reduce ≤ y.reduce := by
+  constructor
+  · apply reduce_mono
+  exact (le_trans (self_le_reduce x) <| le_trans · (reduce_le_self y))
+
+lemma reduce_strictMono {a b : α} : StrictMono (α := a -[r]→* b) (·.reduce) := by
+  intro x y hlt
+  simpa [lt_iff_le_not_le,← reduce_le_reduce_iff]
+
+@[simp]
+lemma reduce_isReduced {a b : α} (x : a -[r]→* b) : x.reduce.IsReduced := by
+  induction x with
+  | singleton a => simp
+  | cons a l hab ih =>
+    rw [reduce]
+    split <;> rename_i h
+    · cases h; simp_all
+    · simp_all
+
+lemma reduce_eq_self_of_isReduced {a b : α} (x : a -[r]→* b) (hx : x.IsReduced) :
+    x.reduce = x := by
+  induction x with
+  | singleton a => simp_all
+  | cons a l hab ih =>
+    simp_all
+    rw [reduce_cons_of_ne a l hab hx.left, ih]
+
+@[simp]
+lemma reduce_reduce {a b : α} (x : a -[r]→* b) : x.reduce.reduce = x.reduce := by
+  rw [reduce_eq_self_of_isReduced _ (reduce_isReduced x)]
+
+@[simp]
+lemma IsReduced_ofRel {a b : α} (hr : r a b) : (ofRel hr).IsReduced ↔ a ≠ b := by
+  constructor
+  · rintro h rfl
+    have h := h.isReduced _ (cons_le_append a hr (singleton a) (le_refl (singleton a)))
+    simp at h
+  · rw [isReduced_iff]
+    contrapose!
+    rintro ⟨z,hz1,hz2⟩
+    cases z <;> simp_all
+
+@[simp]
+lemma isReduced_of_irrefl [IsIrrefl α r] {a b : α} (x : a -[r]→* b) : x.IsReduced := by
+  induction x with
+  | singleton a => simp
+  | cons a l hab ih =>
+    simp_all only [isReduced_cons_iff, ne_eq, and_true]
+    rintro rfl
+    exact irrefl _ hab
+
+lemma toList_reduce_sublist_of_reduce_le {a b : α} (x y : a -[r]→* b) :
+  x.reduce ≤ y → x.reduce.toList.Sublist y.toList := by
+  induction x with
+  | singleton a => simp
+  | cons a l hab ih =>
+    rw [reduce]
+    split <;> rename_i h
+    · cases h
+      simp_all
+    · simp_all only [toList_cons]
+      intro h
+      cases h with
+      | ofSubstCons hr hseries hle =>
+        refine List.cons_sublist_iff.mpr ?_
+        simp only [← toList_append, toList_append']
+        refine ⟨hseries.toList.dropLast,_,rfl,?_,ih _ hle⟩
+        cases hseries with
+        | singleton a => contradiction
+        | cons a l hab =>
+          rw [toList_cons,List.dropLast_cons_of_ne_nil l.toList_ne_nil]
+          simp
+
+lemma le_iff_sublist_of_IsReduced {a b : α} {x : a -[r]→* b} (hx : x.IsReduced) (y : a -[r]→* b) :
+    x.toList.Sublist y.toList ↔ x ≤ y := by
+  constructor
+  · exact le_of_toList_sublist_toList x y
+  · intro h
+    rw [← reduce_eq_self_of_isReduced _ hx] at h ⊢
+    exact toList_reduce_sublist_of_reduce_le x y h
+
+lemma le_antisymm_of_isReduced_of_isReduced {a b : α} {x y : a -[r]→* b} (hx : x.IsReduced) (hy : y.IsReduced) :
+  x ≤ y → y ≤ x → x = y := by
+  intro hle hge
+  refine eq_of_heq (ext _ _ ?_).right.right
+  apply List.Sublist.antisymm
+  · rwa [le_iff_sublist_of_IsReduced hx]
+  · rwa [le_iff_sublist_of_IsReduced hy]
+
+instance [IsIrrefl α r] {a b : α} : PartialOrder (a -[r]→* b) where
+  le_antisymm x y := le_antisymm_of_isReduced_of_isReduced (isReduced_of_irrefl x) (isReduced_of_irrefl y)
+
+end IsReduced
+
+lemma eq_of_le_of_length_le {a b : α} {x y : a -[r]→* b} (hx : x.IsReduced) :
+  x ≤ y → y.length ≤ x.length → x = y := by
+  intro hle hlength
+  refine eq_of_heq (ext _ _ ?_).right.right
+  rw [← le_iff_sublist_of_IsReduced hx] at hle
+  rw [← Nat.add_le_add_iff_right (n := 1)] at hlength
+  simp_rw [← length_toList] at hlength
+  exact hle.eq_of_length_le hlength
+
+lemma length_mono_of_isReduced {a b : α} {x : a -[r]→* b} (hx : x.IsReduced) (y : a -[r]→* b) :
+  x ≤ y → x.length ≤ y.length := by
+  exact hx.isReduced y
+
+lemma length_strictMono_of_isReduced {a b : α} {x : a -[r]→* b} (hx : x.IsReduced) (y : a -[r]→* b) :
+  x < y → x.length < y.length := by
+  simp_rw [lt_iff_le_not_le]
+  rintro ⟨hle,hnle⟩
+  use hx.isReduced y hle
+  contrapose! hnle
+  have hsublist: x.toList.Sublist y.toList := (le_iff_sublist_of_IsReduced hx y).mpr hle
+  have heq : x.toList = y.toList := by
+    apply hsublist.eq_of_length_le
+    rw [length_toList,length_toList]
+    omega
+  cases eq_of_heq (ext _ _ heq).right.right
+  rfl
+
+
 
 end RelSeriesHT
