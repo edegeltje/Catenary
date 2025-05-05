@@ -3,263 +3,6 @@ import Mathlib.Data.ENat.Lattice
 import Mathlib.Order.Minimal
 
 variable {α : Type*} {r : Rel α α}
-namespace RelSeriesHT
-
-@[mk_iff]
-class IsReduced {a b : α} (x : a -[r]→* b) : Prop where
-  isReduced (y : a -[r]→* b) : x ≤ y → x.length ≤ y.length
-
-@[simp]
-instance isReduced_singleton (a : α) : (singleton (r := r) a).IsReduced := by
-  simp only [singleton_le, length_singleton, zero_le, imp_self, implies_true, isReduced_iff]
-
-@[simp]
-lemma isReduced_cons_iff (a : α) {b c : α} (x : b -[r]→* c) (hr : r a b) :
-    (cons a x hr).IsReduced ↔ a ≠ b ∧ x.IsReduced := by
-  simp only [isReduced_iff, length_cons, ne_eq]
-  constructor
-  · intro h
-    have : a ≠ b := by
-      rintro rfl
-      specialize h x (cons_le_append a hr (singleton a) (le_refl _))
-      simp at h
-    use this
-    intro y hy
-    specialize h (cons a y hr) (cons_le_append a hr (ofRel hr) hy)
-    simpa using h
-  · rintro ⟨hne,h⟩
-    intro y hy
-    cases hy with
-    | ofSubstCons hr hseries hle =>
-      specialize h _ hle
-      simp only [length_append]
-      have := length_pos_of_ne hne hseries
-      omega
-
-lemma append_isReduced {a b c} {x : a -[r]→* b} {y : b -[r]→* c} :
-    (x ++ y).IsReduced ↔ x.IsReduced ∧ y.IsReduced := by
-  induction x with
-  | singleton a => simp
-  | cons a l hab ih => simp_all [and_assoc]
-
-noncomputable def reduce {a b : α} (x : a -[r]→* b) : a -[r]→* b :=
-  open Classical in
-  match x with
-  | .singleton a => .singleton a
-  | @cons _ _ a b c l hr => if h: a = b then copy (reduce l) (h.symm) rfl else .cons a (reduce l) hr
-
-@[simp]
-lemma reduce_singleton (a : α) : reduce (.singleton (r := r) a) = .singleton a := rfl
-
-lemma reduce_cons_of_eq (a : α) {b c : α} (x : b -[r]→* c) (hr : r a b) (hab : a = b) :
-    reduce (cons a x hr) = copy (reduce x) (hab.symm) rfl := by
-  rw [reduce,dif_pos hab]
-
-lemma reduce_cons_of_ne (a : α) {b c : α} (x : b -[r]→* c) (hr : r a b) (hab : a ≠ b) :
-    reduce (cons a x hr) = cons a (reduce x) hr := by
-  rw [reduce,dif_neg hab]
-
-@[simp]
-lemma reduce_cons [DecidableEq α] (a : α) {b c : α} (x : b -[r]→* c) (hr : r a b) :
-    reduce (cons a x hr) =
-      if h : a = b then copy (reduce x) (h.symm) rfl else cons a (reduce x) hr := by
-  rw [reduce]
-  congr
-
-@[simp]
-lemma reduce_append {a b c : α} (x : a -[r]→* b) (y : b -[r]→* c) : reduce (x ++ y) =
-    reduce x ++ reduce y := by
-  induction x with
-  | singleton a => simp
-  | cons a l hab ih =>
-    simp_all
-    rw [reduce,reduce]
-    split <;> rename_i h
-    · cases h
-      simp_all
-    · simp_all
-
-@[simp]
-lemma toList_reduce [DecidableEq α] {a b : α} (x : a -[r]→* b) :
-    toList (reduce x) = x.toList.destutter (· ≠ ·) := by
-  induction x with
-  | singleton a =>
-    simp
-  | cons a l hab ih =>
-    simp only [reduce_cons, ne_eq, toList_cons]
-    cases l with
-    | singleton a =>
-      simp only [reduce_singleton, toList_singleton, List.destutter_pair, ite_not]
-      split <;> simp_all
-    | cons a l hab =>
-      simp only [toList_cons]
-      split <;> simp_all only [ne_eq, toList_cons, toList_copy]
-      · rw [List.destutter_cons_cons]
-        simp_all only [not_true_eq_false, ite_false, reduce_cons]
-        rfl
-      · rw [List.destutter_cons_cons]
-        simp_all only [not_false_eq_true, ite_true, List.cons.injEq, true_and]
-        rw [← List.destutter_cons']
-
-@[simp]
-lemma length_reduce_le_length_self {a b : α} (x : a -[r]→* b) : x.reduce.length ≤ x.length := by
-  induction x with
-  | singleton a => simp
-  | cons a l hab ih =>
-    rw [reduce]
-    split <;> simp_all ; omega
-
-/-- the universal property of `IsReduced` -/
-lemma le_reduce_of_le {a b : α} {x y : a -[r]→* b} (hle : x ≤ y) : x ≤ y.reduce := by
-  induction x with
-  | singleton a => simp
-  | cons a l hab ih =>
-    cases hle with
-    | ofSubstCons hr hseries hle =>
-      rw [reduce_append]
-      exact cons_le_append a hab hseries.reduce (ih hle)
-
-lemma reduce_le_self {a b : α} (x : a -[r]→* b) : x.reduce ≤ x := by
-  induction x with
-  | singleton a => simp
-  | cons a l hab ih =>
-    rw [reduce]
-    split <;> rename_i h
-    · cases h
-      apply le_trans ih
-      exact append_left_mono l (singleton_le (ofRel hab))
-    · exact append_right_mono (ofRel hab) (ih)
-
-@[simp]
-lemma self_le_reduce {a b : α} (x : a -[r]→* b) : x ≤ x.reduce :=
-  le_reduce_of_le (le_refl x)
-
-lemma reduce_mono {a b : α} : Monotone (α := a -[r]→* b) (·.reduce) :=
-  fun a _ hle => le_trans (reduce_le_self a) (le_reduce_of_le hle)
-
-lemma reduce_gc {a b : α} : GaloisConnection (α := a -[r]→* b) (id) (reduce) := by
-  rw [GaloisConnection]
-  simp_all only [id_eq]
-  intro x y
-  refine ⟨le_reduce_of_le,(le_trans · (reduce_le_self y))⟩
-
-lemma reduce_le_reduce_iff {a b : α} (x y : a -[r]→* b) : x ≤ y ↔ x.reduce ≤ y.reduce := by
-  constructor
-  · apply reduce_mono
-  exact (le_trans (self_le_reduce x) <| le_trans · (reduce_le_self y))
-
-lemma reduce_strictMono {a b : α} : StrictMono (α := a -[r]→* b) (·.reduce) := by
-  intro x y hlt
-  simpa [lt_iff_le_not_le,← reduce_le_reduce_iff]
-
-@[simp]
-lemma reduce_isReduced {a b : α} (x : a -[r]→* b) : x.reduce.IsReduced := by
-  induction x with
-  | singleton a => simp
-  | cons a l hab ih =>
-    rw [reduce]
-    split <;> rename_i h
-    · cases h; simp_all
-    · simp_all
-
-lemma reduce_eq_self_of_isReduced {a b : α} (x : a -[r]→* b) (hx : x.IsReduced) :
-    x.reduce = x := by
-  induction x with
-  | singleton a => simp_all
-  | cons a l hab ih =>
-    simp_all
-    rw [reduce_cons_of_ne a l hab hx.left, ih]
-
-@[simp]
-lemma reduce_reduce {a b : α} (x : a -[r]→* b) : x.reduce.reduce = x.reduce := by
-  rw [reduce_eq_self_of_isReduced _ (reduce_isReduced x)]
-
-@[simp]
-lemma IsReduced_ofRel {a b : α} (hr : r a b) : (ofRel hr).IsReduced ↔ a ≠ b := by
-  constructor
-  · rintro h rfl
-    have h := h.isReduced _ (cons_le_append a hr (singleton a) (le_refl (singleton a)))
-    simp at h
-  · rw [isReduced_iff]
-    contrapose!
-    rintro ⟨z,hz1,hz2⟩
-    cases z <;> simp_all
-
-@[simp]
-lemma isReduced_of_irrefl [IsIrrefl α r] {a b : α} (x : a -[r]→* b) : x.IsReduced := by
-  induction x with
-  | singleton a => simp
-  | cons a l hab ih =>
-    simp_all only [isReduced_cons_iff, ne_eq, and_true]
-    rintro rfl
-    exact irrefl _ hab
-
-lemma toList_reduce_sublist_of_reduce_le {a b : α} (x y : a -[r]→* b) :
-  x.reduce ≤ y → x.reduce.toList.Sublist y.toList := by
-  induction x with
-  | singleton a => simp
-  | cons a l hab ih =>
-    rw [reduce]
-    split <;> rename_i h
-    · cases h
-      simp_all
-    · simp_all only [toList_cons]
-      intro h
-      cases h with
-      | ofSubstCons hr hseries hle =>
-        refine List.cons_sublist_iff.mpr ?_
-        simp only [← toList_append, toList_append']
-        refine ⟨hseries.toList.dropLast,_,rfl,?_,ih _ hle⟩
-        cases hseries with
-        | singleton a => contradiction
-        | cons a l hab =>
-          rw [toList_cons,List.dropLast_cons_of_ne_nil l.toList_ne_nil]
-          simp
-
-lemma le_iff_sublist_of_IsReduced {a b : α} {x : a -[r]→* b} (hx : x.IsReduced) (y : a -[r]→* b) :
-    x.toList.Sublist y.toList ↔ x ≤ y := by
-  constructor
-  · exact le_of_toList_sublist_toList x y
-  · intro h
-    rw [← reduce_eq_self_of_isReduced _ hx] at h ⊢
-    exact toList_reduce_sublist_of_reduce_le x y h
-
-lemma le_antisymm_of_isReduced_of_isReduced {a b : α} {x y : a -[r]→* b} (hx : x.IsReduced) (hy : y.IsReduced) :
-  x ≤ y ∧ y ≤ x → x = y := by
-  intro ⟨hle,hge⟩
-  refine eq_of_heq (ext _ _ ?_).right.right
-  apply List.Sublist.antisymm
-  · rwa [le_iff_sublist_of_IsReduced hx]
-  · rwa [le_iff_sublist_of_IsReduced hy]
-
-lemma eq_of_le_of_length_le {a b : α} {x y : a -[r]→* b} (hx : x.IsReduced) :
-  x ≤ y → y.length ≤ x.length → x = y := by
-  intro hle hlength
-  refine eq_of_heq (ext _ _ ?_).right.right
-  rw [← le_iff_sublist_of_IsReduced hx] at hle
-  rw [← Nat.add_le_add_iff_right (n := 1)] at hlength
-  simp_rw [← length_toList] at hlength
-  exact hle.eq_of_length_le hlength
-
-lemma length_mono_of_isReduced {a b : α} {x : a -[r]→* b} (hx : x.IsReduced) (y : a -[r]→* b) :
-  x ≤ y → x.length ≤ y.length := by
-  exact hx.isReduced y
-
-lemma length_strictMono_of_isReduced {a b : α} {x : a -[r]→* b} (hx : x.IsReduced) (y : a -[r]→* b) :
-  x < y → x.length < y.length := by
-  simp_rw [lt_iff_le_not_le]
-  rintro ⟨hle,hnle⟩
-  use hx.isReduced y hle
-  contrapose! hnle
-  have hsublist: x.toList.Sublist y.toList := (le_iff_sublist_of_IsReduced hx y).mpr hle
-  have heq : x.toList = y.toList := by
-    apply hsublist.eq_of_length_le
-    rw [length_toList,length_toList]
-    omega
-  cases eq_of_heq (ext _ _ heq).right.right
-  rfl
-end RelSeriesHT
-
 
 namespace Rel
 /-
@@ -291,6 +34,7 @@ class IsDiscrete (r : Rel α α) : Prop where
 
 /-- A relation `r` is said to be catenary iff for every two points `a` and `b`,
   any `r`-series extends to a reduced `r`-series of length `n`. -/
+@[mk_iff]
 class IsCatenary (r : Rel α α) : Prop where
   /-- A relation `r` is said to be catenary iff for every two points `a` and `b`,
     any `r`-series extends to a reduced `r`-series of length `n`. -/
@@ -556,6 +300,7 @@ lemma exists_maximal_ge_of_eCodim_lt_top {a b : α} : (eCodim r a b < ⊤) →
     have := length_strictMono_of_isReduced (reduce_isReduced x') _ hy'.left
     omega
 
+/-- chooses a series larger than the given element which cannot be (nontrivially) extended -/
 noncomputable def maximalExtension {a b : α} (hcodim : eCodim r a b < ⊤) (x : a -[r]→* b) :
   a -[r]→* b := (exists_maximal_ge_of_eCodim_lt_top hcodim x).choose
 
@@ -573,6 +318,7 @@ end isDiscrete
 section longestBetween
 
 variable (r) in
+/-- chooses a (reduced) series between the given elements of maximal length -/
 noncomputable def longestBetween (a b : α) (hbot : ⊥ < eCodim r a b) (htop : eCodim r a b < ⊤) : a -[r]→* b :=
   (exists_longest_iff_bot_lt_codim_lt_top a b).mp ⟨hbot,htop⟩ |>.choose
 
@@ -627,6 +373,7 @@ end Rel.IsCatenary
 
 section extendToCodim
 
+/-- like `maximalExtension`, but with `r.IsCatenary` as instance argument -/
 noncomputable def extendToCodim [r.IsCatenary] {a b : α} (x : a -[r]→* b) : a -[r]→* b :=
   ((‹r.IsCatenary›.isCatenary a b).choose_spec x).choose
 
@@ -657,8 +404,8 @@ lemma maximal_extendToCodim [r.IsCatenary] {a b : α} (x : a -[r]→* b) :
 lemma extendToCodim_eq_self_of_maximal [r.IsCatenary] {a b : α} (x : a -[r]→* b) :
     Maximal (·.IsReduced) x → x.extendToCodim = x := by
   intro h
-  apply le_antisymm_of_isReduced_of_isReduced (extendToCodim_isReduced x) h.left
   have := self_le_extendToCodim x
+  apply le_antisymm_of_isReduced_of_isReduced (extendToCodim_isReduced x) h.left _ this
   use h.right (extendToCodim_isReduced x) this
 
 lemma length_eq_eCodim_of_maximal [r.IsCatenary] {a b : α} (x : a -[r]→* b) :
@@ -694,14 +441,14 @@ lemma maximal_append {a b c : α} {x : a -[r]→* b} {y : b -[r]→* c} : Maxima
       apply Eq.ge
       apply append_left_injective y
       apply le_antisymm_of_isReduced_of_isReduced (append_isReduced.mpr h)
-        (append_isReduced.mpr ⟨hx',h.right⟩) ⟨(append_left_mono y hxx'),h'⟩
+        (append_isReduced.mpr ⟨hx',h.right⟩) (append_left_mono y hxx') h'
     · use h.right
       intro y' hy' hyy'
       specialize h' (append_isReduced.mpr ⟨h.left,hy'⟩) (append_right_mono _ hyy')
       apply Eq.ge
       apply append_right_injective x
       exact le_antisymm_of_isReduced_of_isReduced (append_isReduced.mpr h) (append_isReduced.mpr ⟨h.left,hy'⟩)
-        ⟨(append_right_mono x hyy'),h'⟩
+        (append_right_mono x hyy') h'
 
 end extendToCodim
 
@@ -777,19 +524,6 @@ lemma isCatenary_iff_isDiscrete_and_dimension_formula : r.IsCatenary ↔ r.IsDis
       congr
       rw [eCodim_eq_one_of_maximal_ofRel _ hx.left,length_ofRel,Nat.cast_one]
 
-
-/--
-info: RelSeriesHT.isCatenary_iff_isDiscrete_and_dimension_formula.{u_1} {α : Type u_1} {r : Rel α α} :
-  r.IsCatenary ↔ r.IsDiscrete ∧ ∀ {a b c : α}, a -[r]→* b → b -[r]→* c → eCodim r a b + eCodim r b c = eCodim r a c
--/
-#guard_msgs in
-#check isCatenary_iff_isDiscrete_and_dimension_formula
-
-/--
-info: 'RelSeriesHT.isCatenary_iff_isDiscrete_and_dimension_formula' depends on axioms: [propext, Classical.choice, Quot.sound]
--/
-#guard_msgs in
-#print axioms isCatenary_iff_isDiscrete_and_dimension_formula
 
 -- -- variable (r) in
 -- noncomputable def longerBetween [r.IsDense] {a b : α} (y : a -[r]→* b) : a -[r]→* b :=
