@@ -50,19 +50,19 @@ section ecodim
 variable (r) in
 /-- The (relative) codimension of two elements is supremum of lengths of reduced paths.
   It is -∞ when there are no paths between the two elements, and ∞ when there are arbitrarily long reduced paths. -/
-noncomputable def eCodim (a b : α) : WithBot ℕ∞ := ⨆ (x : a -[r]→* b), (x.reduce.length : WithBot ℕ∞)
+noncomputable def _root_.Rel.eCodim (a b : α) : WithBot ℕ∞ := ⨆ (x : a -[r]→* b), (x.reduce.length : WithBot ℕ∞)
 
-lemma eCodim_def (a b : α) : eCodim r a b = ⨆ (x : a -[r]→* b), (x.reduce.length : WithBot ℕ∞) := rfl
+lemma eCodim_def (a b : α) : Rel.eCodim r a b = ⨆ (x : a -[r]→* b), (x.reduce.length : WithBot ℕ∞) := rfl
 
 lemma length_le_eCodim_of_isReduced {a b : α} {x : a -[r]→* b} (hx : x.IsReduced) :
-    x.length ≤ eCodim r a b := by
+    x.length ≤ Rel.eCodim r a b := by
   rw [← reduce_eq_self_of_isReduced x hx, eCodim_def]
   exact le_iSup_iff.mpr fun b_1 a ↦ a x
 
-lemma eCodim_eq_bot_iff {a b : α} : eCodim r a b = ⊥ ↔ IsEmpty (a -[r]→* b) := by
+lemma eCodim_eq_bot_iff {a b : α} : Rel.eCodim r a b = ⊥ ↔ IsEmpty (a -[r]→* b) := by
   simp only [eCodim_def, iSup_eq_bot, WithBot.natCast_ne_bot, isEmpty_iff]
 
-lemma eCodim_nonneg_iff {a b : α} : 0 ≤ eCodim r a b ↔ Nonempty (a -[r]→* b) := by
+lemma eCodim_nonneg_iff {a b : α} : 0 ≤ Rel.eCodim r a b ↔ Nonempty (a -[r]→* b) := by
   constructor
   · contrapose!
     intro h
@@ -73,13 +73,13 @@ lemma eCodim_nonneg_iff {a b : α} : 0 ≤ eCodim r a b ↔ Nonempty (a -[r]→*
     · simp
     · exact length_le_eCodim_of_isReduced (reduce_isReduced y)
 
-lemma bot_lt_eCodim_iff {a b : α} : ⊥ < eCodim r a b ↔ Nonempty (a -[r]→* b) := by
+lemma bot_lt_eCodim_iff {a b : α} : ⊥ < Rel.eCodim r a b ↔ Nonempty (a -[r]→* b) := by
   rw [← eCodim_nonneg_iff]
-  generalize eCodim r a b = z
+  generalize Rel.eCodim r a b = z
   cases z <;> simp
 
 lemma eCodim_eq_sSup_length_reduce (a b : α) :
-    eCodim r a b = ⨅ (n : WithBot ℕ∞), ⨅ (_ : ∀ (x : a -[r]→* b), ∃ y, x ≤ y ∧ y.length ≤ n), (n : WithBot ℕ∞):= by
+    Rel.eCodim r a b = ⨅ (n : WithBot ℕ∞), ⨅ (_ : ∀ (x : a -[r]→* b), ∃ y, x ≤ y ∧ y.length ≤ n), (n : WithBot ℕ∞):= by
   rw [eCodim_def]
   apply le_antisymm
   · simp_rw [le_iInf_iff,iSup_le_iff]
@@ -97,7 +97,7 @@ lemma eCodim_eq_sSup_length_reduce (a b : α) :
     intro i
     use i.reduce, self_le_reduce i, (he i)
 
-lemma eCodim_lt_top [inst:r.IsDiscrete] (a b : α) : eCodim r a b < ⊤ := by
+lemma eCodim_lt_top [inst:r.IsDiscrete] (a b : α) : Rel.eCodim r a b < ⊤ := by
   rw [eCodim_def]
   rw [iSup_lt_iff]
   obtain ⟨z,hz⟩ := inst.isDiscrete a b
@@ -112,20 +112,20 @@ lemma eCodim_lt_top [inst:r.IsDiscrete] (a b : α) : eCodim r a b < ⊤ := by
     apply le_trans (reduce_le_self i) hiy
   exact hyl
 
-lemma isDiscrete_iff_forall_eCodim_lt_top : r.IsDiscrete ↔ ∀ a b, eCodim r a b < ⊤ := by
+lemma isDiscrete_iff_forall_eCodim_lt_top : r.IsDiscrete ↔ ∀ a b, Rel.eCodim r a b < ⊤ := by
   refine ⟨@eCodim_lt_top _ _,?_⟩
   rw [Rel.isDiscrete_iff]
   intro h a b
   specialize h a b
-  use (eCodim r a b).unbotD 0|>.toNat
+  use (Rel.eCodim r a b).unbotD 0|>.toNat
   intro x
-  have : eCodim r a b ≠ ⊥ := (bot_lt_eCodim_iff.mpr ⟨x⟩).ne.symm
+  have : Rel.eCodim r a b ≠ ⊥ := (bot_lt_eCodim_iff.mpr ⟨x⟩).ne.symm
   use x.reduce, reduce_isReduced x, self_le_reduce x
-  rw [(WithBot.unbotD_eq_iff (y := (eCodim r a b).unbot this)).mpr (.inl
+  rw [(WithBot.unbotD_eq_iff (y := (Rel.eCodim r a b).unbot this)).mpr (.inl
     ((WithBot.unbot_eq_iff this).mp rfl))]
   rw [← ENat.toNat_coe x.reduce.length]
   apply ENat.toNat_le_toNat _ (by
-    rw [ne_eq,← (WithBot.coe_inj (a := (eCodim r a b).unbot this) (b := ⊤))]
+    rw [ne_eq,← (WithBot.coe_inj (a := (Rel.eCodim r a b).unbot this) (b := ⊤))]
     simp only [WithBot.coe_unbot, WithBot.coe_top]
     exact h.ne)
   · rw [← WithBot.coe_le_coe]
@@ -135,20 +135,20 @@ lemma isDiscrete_iff_forall_eCodim_lt_top : r.IsDiscrete ↔ ∀ a b, eCodim r a
 
 
 @[simp]
-lemma reduce_length_le_eCodim {a b : α} (x : a -[r]→* b) : x.reduce.length ≤ eCodim r a b := by
+lemma reduce_length_le_eCodim {a b : α} (x : a -[r]→* b) : x.reduce.length ≤ Rel.eCodim r a b := by
   rw [eCodim_def]
   exact le_iSup_iff.mpr fun b_1 a ↦ a x
 
-lemma eCodim_le_enat_iff {a b : α} (n : ℕ∞) : eCodim r a b ≤ n ↔
+lemma eCodim_le_enat_iff {a b : α} (n : ℕ∞) : Rel.eCodim r a b ≤ n ↔
     ∀ (x : a -[r]→* b), x.reduce.length ≤ n := by
   rw [eCodim_def, iSup_le_iff]
   simp_rw [← WithBot.coe_natCast, WithBot.coe_le_coe]
 
-lemma eCodim_le_nat_iff {a b : α} (n : ℕ) : eCodim r a b ≤ n ↔
+lemma eCodim_le_nat_iff {a b : α} (n : ℕ) : Rel.eCodim r a b ≤ n ↔
     ∀ (x : a -[r]→* b), x.reduce.length ≤ n := by
   simp_rw [eCodim_def, iSup_le_iff,Nat.cast_le]
 
-lemma eCodim_eq_top [r.IsDense] (a b : α) : eCodim r a b = ⊤ ↔ Nonempty (a -[r]→* b) := by
+lemma eCodim_eq_top [r.IsDense] (a b : α) : Rel.eCodim r a b = ⊤ ↔ Nonempty (a -[r]→* b) := by
   have := ‹r.IsDense›.isDense a b
   constructor
   · rw [eCodim_eq_sSup_length_reduce]
@@ -196,7 +196,7 @@ lemma eCodim_eq_top [r.IsDense] (a b : α) : eCodim r a b = ⊤ ↔ Nonempty (a 
             omega
 
 lemma eCodim_eq_one_of_maximal_ofRel {a b : α} (hr : r a b): Maximal (·.IsReduced) (ofRel hr) →
-    eCodim r a b = 1 := by
+    Rel.eCodim r a b = 1 := by
   intro h
   refine iSup_eq_of_forall_le_of_forall_lt_exists_gt ?_ ?_
   · intro i
@@ -214,7 +214,7 @@ end ecodim
 section isDiscrete
 
 section longest
-lemma exists_longest_iff_bot_lt_codim_lt_top (a b : α) : (⊥ < eCodim r a b) ∧ (eCodim r a b < ⊤) ↔
+lemma exists_longest_iff_bot_lt_codim_lt_top (a b : α) : (⊥ < Rel.eCodim r a b) ∧ (Rel.eCodim r a b < ⊤) ↔
     ∃ z: a -[r]→* b, z.IsReduced ∧ ∀ y : a -[r]→* b, y.IsReduced → y.length ≤ z.length := by
   constructor
   · rintro ⟨hbot,htop⟩
@@ -267,7 +267,7 @@ end longest
 
 section maximal
 
-lemma exists_maximal_ge_of_eCodim_lt_top {a b : α} : (eCodim r a b < ⊤) →
+lemma exists_maximal_ge_of_eCodim_lt_top {a b : α} : (Rel.eCodim r a b < ⊤) →
     ∀ x: a-[r]→* b, ∃ z: a-[r]→* b, x ≤ z ∧ Maximal (·.IsReduced) z := by
   intro hdim x
   contrapose! hdim
@@ -301,13 +301,13 @@ lemma exists_maximal_ge_of_eCodim_lt_top {a b : α} : (eCodim r a b < ⊤) →
     omega
 
 /-- chooses a series larger than the given element which cannot be (nontrivially) extended -/
-noncomputable def maximalExtension {a b : α} (hcodim : eCodim r a b < ⊤) (x : a -[r]→* b) :
+noncomputable def maximalExtension {a b : α} (hcodim : Rel.eCodim r a b < ⊤) (x : a -[r]→* b) :
   a -[r]→* b := (exists_maximal_ge_of_eCodim_lt_top hcodim x).choose
 
-lemma maximal_maximalExtension {a b : α} (hcodim : eCodim r a b < ⊤) (x : a -[r]→* b) :
+lemma maximal_maximalExtension {a b : α} (hcodim : Rel.eCodim r a b < ⊤) (x : a -[r]→* b) :
   Maximal (·.IsReduced) (maximalExtension hcodim x) := (exists_maximal_ge_of_eCodim_lt_top hcodim x).choose_spec.right
 
-lemma self_le_maximalExtension {a b : α} (hcodim : eCodim r a b < ⊤) (x : a -[r]→* b) :
+lemma self_le_maximalExtension {a b : α} (hcodim : Rel.eCodim r a b < ⊤) (x : a -[r]→* b) :
   x ≤ maximalExtension hcodim x := (exists_maximal_ge_of_eCodim_lt_top hcodim x).choose_spec.left
 
 end maximal
@@ -319,28 +319,28 @@ section longestBetween
 
 variable (r) in
 /-- chooses a (reduced) series between the given elements of maximal length -/
-noncomputable def longestBetween (a b : α) (hbot : ⊥ < eCodim r a b) (htop : eCodim r a b < ⊤) : a -[r]→* b :=
+noncomputable def longestBetween (a b : α) (hbot : ⊥ < Rel.eCodim r a b) (htop : Rel.eCodim r a b < ⊤) : a -[r]→* b :=
   (exists_longest_iff_bot_lt_codim_lt_top a b).mp ⟨hbot,htop⟩ |>.choose
 
 @[simp]
-lemma longestBetween_isReduced {a b : α} (hbot : ⊥ < eCodim r a b) (htop : eCodim r a b < ⊤) :
+lemma longestBetween_isReduced {a b : α} (hbot : ⊥ < Rel.eCodim r a b) (htop : Rel.eCodim r a b < ⊤) :
   (longestBetween r a b hbot htop).IsReduced :=
   (exists_longest_iff_bot_lt_codim_lt_top a b).mp ⟨hbot,htop⟩ |>.choose_spec.left
 
-lemma longestBetween_longest {a b : α} (hbot : ⊥ < eCodim r a b) (htop : eCodim r a b < ⊤) :
+lemma longestBetween_longest {a b : α} (hbot : ⊥ < Rel.eCodim r a b) (htop : Rel.eCodim r a b < ⊤) :
   ∀ x : a -[r]→* b, x.IsReduced → x.length ≤ (longestBetween r a b hbot htop).length :=
   (exists_longest_iff_bot_lt_codim_lt_top a b).mp ⟨hbot,htop⟩ |>.choose_spec.right
 
 @[simp]
-lemma length_longestBetween_eq_eCodim {a b : α} (hbot : ⊥ < eCodim r a b) (htop : eCodim r a b < ⊤) :
-    (longestBetween r a b hbot htop).length = eCodim r a b := by
+lemma length_longestBetween_eq_eCodim {a b : α} (hbot : ⊥ < Rel.eCodim r a b) (htop : Rel.eCodim r a b < ⊤) :
+    (longestBetween r a b hbot htop).length = Rel.eCodim r a b := by
   apply le_antisymm
   · exact length_le_eCodim_of_isReduced (longestBetween_isReduced hbot htop)
   · rw [eCodim_le_nat_iff]
     intro x
     exact longestBetween_longest hbot htop _ (reduce_isReduced _)
 
-lemma maximal_of_IsReduced_of_length_eq_eCodim {a b : α} (x : a -[r]→* b) (hx : x.IsReduced) (hlength : x.length = eCodim r a b) :
+lemma maximal_of_IsReduced_of_length_eq_eCodim {a b : α} (x : a -[r]→* b) (hx : x.IsReduced) (hlength : x.length = Rel.eCodim r a b) :
     Maximal (·.IsReduced) x := by
   constructor
   · exact hx
@@ -351,7 +351,7 @@ lemma maximal_of_IsReduced_of_length_eq_eCodim {a b : α} (x : a -[r]→* b) (hx
   rw [hlength]
   exact length_le_eCodim_of_isReduced hy
 
-lemma maximal_longestBetween {a b : α} (hbot : ⊥ < eCodim r a b) (htop : eCodim r a b < ⊤) :
+lemma maximal_longestBetween {a b : α} (hbot : ⊥ < Rel.eCodim r a b) (htop : Rel.eCodim r a b < ⊤) :
     Maximal (·.IsReduced) (longestBetween r a b hbot htop) :=
   maximal_of_IsReduced_of_length_eq_eCodim _ (longestBetween_isReduced _ _)
     (length_longestBetween_eq_eCodim hbot htop)
@@ -409,7 +409,7 @@ lemma extendToCodim_eq_self_of_maximal [r.IsCatenary] {a b : α} (x : a -[r]→*
   use h.right (extendToCodim_isReduced x) this
 
 lemma length_eq_eCodim_of_maximal [r.IsCatenary] {a b : α} (x : a -[r]→* b) :
-    Maximal (·.IsReduced) x → x.length = eCodim r a b := by
+    Maximal (·.IsReduced) x → x.length = Rel.eCodim r a b := by
   intro h
   rw [← extendToCodim_eq_self_of_maximal _ h, extendToCodim_length_eq,
     ← extendToCodim_length_eq (longestBetween r a b ?a ?b),
@@ -419,7 +419,7 @@ lemma length_eq_eCodim_of_maximal [r.IsCatenary] {a b : α} (x : a -[r]→* b) :
   · exact eCodim_lt_top a b
 
 lemma length_extendToCodim_eq_eCodim [r.IsCatenary] {a b : α} (x : a -[r]→* b) :
-    x.extendToCodim.length = eCodim r a b :=
+    x.extendToCodim.length = Rel.eCodim r a b :=
   length_eq_eCodim_of_maximal x.extendToCodim (maximal_extendToCodim x)
 
 lemma maximal_append {a b c : α} {x : a -[r]→* b} {y : b -[r]→* c} : Maximal (·.IsReduced) x ∧ Maximal (·.IsReduced) y ↔
@@ -454,16 +454,16 @@ end extendToCodim
 
 section Rel.IsCatenary
 
-lemma isCatenary_iff_length_eq_eCodim_of_maximal : r.IsCatenary ↔ ∀ ⦃a b : α⦄, eCodim r a b < ⊤ ∧ ∀ x : a -[r]→* b,
-    Maximal (·.IsReduced) x → x.length = eCodim r a b := by
+lemma isCatenary_iff_length_eq_eCodim_of_maximal : r.IsCatenary ↔ ∀ ⦃a b : α⦄, Rel.eCodim r a b < ⊤ ∧ ∀ x : a -[r]→* b,
+    Maximal (·.IsReduced) x → x.length = Rel.eCodim r a b := by
   refine ⟨fun r ⦃a b⦄ ↦ ⟨eCodim_lt_top a b, fun x hmax ↦ length_eq_eCodim_of_maximal x hmax⟩,?_⟩
   intro h
   constructor
   intro a b
-  use ((eCodim r a b).unbotD 0).toNat
+  use ((Rel.eCodim r a b).unbotD 0).toNat
   intro x
-  have : eCodim r a b ≠ ⊥ := (bot_lt_eCodim_iff.mpr ⟨x⟩).ne.symm
-  rw [(WithBot.unbotD_eq_iff (y := (eCodim r a b).unbot this)).mpr (.inl
+  have : Rel.eCodim r a b ≠ ⊥ := (bot_lt_eCodim_iff.mpr ⟨x⟩).ne.symm
+  rw [(WithBot.unbotD_eq_iff (y := (Rel.eCodim r a b).unbot this)).mpr (.inl
     ((WithBot.unbot_eq_iff this).mp rfl))]
   obtain ⟨hcodim,h⟩ := @h a b
   use x.maximalExtension hcodim,(maximal_maximalExtension hcodim x).left, (self_le_maximalExtension hcodim x)
@@ -474,7 +474,7 @@ lemma isCatenary_iff_length_eq_eCodim_of_maximal : r.IsCatenary ↔ ∀ ⦃a b :
 end Rel.IsCatenary
 
 lemma dimension_formula [r.IsCatenary] {a b c : α} (x : a -[r]→* b) (y : b -[r]→* c):
-  eCodim r a b + eCodim r b c = eCodim r a c := by
+  Rel.eCodim r a b + Rel.eCodim r b c = Rel.eCodim r a c := by
   rw [← length_eq_eCodim_of_maximal (x.maximalExtension (eCodim_lt_top a b))
       (maximal_maximalExtension (eCodim_lt_top a b) x),
     ← length_eq_eCodim_of_maximal (y.maximalExtension (eCodim_lt_top b c))
@@ -490,7 +490,7 @@ lemma dimension_formula [r.IsCatenary] {a b c : α} (x : a -[r]→* b) (y : b -[
   · exact maximal_maximalExtension (eCodim_lt_top b c) y
 
 lemma isCatenary_iff_isDiscrete_and_dimension_formula : r.IsCatenary ↔ r.IsDiscrete ∧
-    ∀ {a b c}, (a -[r]→* b) → (b -[r]→* c) →  eCodim r a b + eCodim r b c = eCodim r a c := by
+    ∀ {a b c}, (a -[r]→* b) → (b -[r]→* c) →  Rel.eCodim r a b + Rel.eCodim r b c = Rel.eCodim r a c := by
   constructor
   · intro h
     constructor
@@ -503,7 +503,7 @@ lemma isCatenary_iff_isDiscrete_and_dimension_formula : r.IsCatenary ↔ r.IsDis
     -- specialize hlt_top a b
     use hlt_top a b
     intro x hx
-    have hbot_lt : ⊥ < eCodim r a b := by
+    have hbot_lt : ⊥ < Rel.eCodim r a b := by
       refine bot_lt_eCodim_iff.mpr ⟨x⟩
     induction x with
     | singleton a =>
