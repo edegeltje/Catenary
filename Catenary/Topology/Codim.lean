@@ -52,3 +52,8 @@ example (hU : IsOpen U) (a b : IrreducibleCloseds X) : (a -[(· < ·)]→* b) �
 -- not sure if it's needed
 lemma codim_nonneg [TopologicalSpace X] (Y: IrreducibleCloseds X) : 0 ≤ codim Y := by
   sorry
+
+-- this is the theorem 5.11.2 to prove
+theorem codimension_theorem
+    {U: Set X}(Y: IrreducibleCloseds X) (hU: IsOpen U)(hi: (U ∩ Y).Nonempty ) : codim Y = @codim U _ ⟨((U ↓∩ Y): Set U), sorry, sorry ⟩   := by
+  sorry
