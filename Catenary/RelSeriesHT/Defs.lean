@@ -16,14 +16,13 @@ If `r` is a relation on `α` then a relation series of length `n` is a series
 
 -/
 
-variable {α : Type*} (r : Rel α α)
+variable {α : Type*} (r : α → α → Sort*)
 
 /-- `a -[r]→* b` is a type of nonempty lists of elements such that adjacent elements are
   related by `r`, and such that the list starts/ends with `a`/`b` respectively. -/
-inductive RelSeriesHT {α : Type*} (r :α → α → Sort*): (a : α) → (b : α) → Sort (max (u_2 + 1) u_3)
-where
-  | singleton (a : α) : RelSeriesHT r a a
-  | cons (a : α) {b c: α} (l : RelSeriesHT r b c) (hab : r a b) : RelSeriesHT r a c
+inductive RelSeriesHT {α : Type*} (r :α → α → Sort*): (a : α) → (b : α) → Sort (max (u_3 + 1) u_4) where
+| singleton (a : α) : RelSeriesHT r a a
+| cons (a : α) {b c: α} (l : RelSeriesHT r b c) (hab : r a b) : RelSeriesHT r a c
 
 variable {r}
 namespace RelSeriesHT
@@ -91,13 +90,13 @@ lemma getLast?_toList {a b : α} (l : a -[r]→* b) :
   | singleton a => rfl
   | cons a l hab ih => simp_all [List.getLast?_cons]
 
-lemma chain'_toList {a b : α} (l : a -[r]→* b) : l.toList.Chain' r := by
+lemma chain'_toList {r : Rel α α} {a b : α} (l : a -[r]→* b) : l.toList.Chain' r := by
   induction l with
   | singleton a => simp
   | cons a l hab ih => simp_all [List.chain'_cons', List.head?_eq_head l.toList_ne_nil]
 
 -- @[ext] doesn't work here
-lemma ext {a a' b b' : α} (l : a -[r]→* b) (l' : a' -[r]→* b') :
+lemma ext {r : Rel α α} {a a' b b' : α} (l : a -[r]→* b) (l' : a' -[r]→* b') :
   (l.toList = l'.toList) → (a = a' ∧ b = b' ∧ HEq l l') := by
   induction l generalizing l' a' with
   | singleton a => cases l' with
@@ -179,36 +178,36 @@ section ofLE
 Given two relations `r, s` on `α` such that `r ≤ s`, any relation series of `r` induces a relation
 series of `s`
 -/
-def ofLE {a b : α} (x : a -[r]→* b) {s : Rel α α} (h : r ≤ s) : a -[s]→* b :=
+def ofLE {a b : α} (x : a -[r]→* b) {s : α → α → Sort*} (f : ∀ {a b}, r a b → s a b) : a -[s]→* b :=
   match x with
   | .singleton a => .singleton a
-  | .cons a l hab => .cons a (l.ofLE h) (h _ _ hab)
+  | .cons a l hab => .cons a (l.ofLE f) (f hab)
 
 @[simp]
-lemma ofLE_singleton (a : α) {s : Rel α α} (h : r ≤ s) : ofLE (singleton a) h = singleton a := rfl
+lemma ofLE_singleton (a : α) {s : α → α → Sort*} (f : ∀ {a b}, r a b → s a b) : ofLE (singleton a) f = singleton (r := s) a := rfl
 
 @[simp]
-lemma ofLE_cons (a : α) {b b' : α} (l : b -[r]→* b') (hab : r a b) {s : Rel α α} (h : r ≤ s):
-  ofLE (cons a l hab) h = cons a (ofLE l h) (h _ _ hab) := rfl
+lemma ofLE_cons (a : α) {b b' : α} (l : b -[r]→* b') (hab : r a b) {s : α → α → Sort*} (f : ∀ {a b}, r a b → s a b):
+  ofLE (cons a l hab) f = cons a (ofLE l f) (f hab) := rfl
 
 @[simp]
-lemma head_ofLE {a b : α} (x : a -[r]→* b) {s : Rel α α} (h : r ≤ s) :
-  head (ofLE x h) = a := rfl
+lemma head_ofLE {a b : α} (x : a -[r]→* b) {s : α → α → Sort*} (f : ∀ {a b}, r a b → s a b) :
+  head (ofLE x f) = a := rfl
 
 @[simp]
-lemma getLast_ofLE {a b : α} (x : a -[r]→* b) {s : Rel α α} (h : r ≤ s) :
-  getLast (ofLE x h) = b := rfl
+lemma getLast_ofLE {a b : α} (x : a -[r]→* b) {s : α → α → Sort*} (f : ∀ {a b}, r a b → s a b) :
+  getLast (ofLE x f) = b := rfl
 
 
 @[simp]
-lemma toList_ofLe {a b : α} (x : a -[r]→* b) {s : Rel α α} (h : r ≤ s) :
-    toList (ofLE x h) = toList x := by
+lemma toList_ofLe {a b : α} (x : a -[r]→* b) {s : α → α → Sort*} (f : ∀ {a b}, r a b → s a b) :
+    toList (ofLE x f) = toList x := by
   induction x <;> simp_all
 
 end ofLE
 
 section fromListChain'
-
+variable {r : Rel α α}
 /-- any nonempty `List` that satisfies `List.Chain' r` induces an `r`-series
   given by its elements -/
 def fromListChain' (x : List α) (x_ne_nil : x ≠ []) (hx : x.Chain' r) :
@@ -267,6 +266,7 @@ lemma toList_fromListChain' (l : List α) (ne_nil : l ≠ []) (hchain' : l.Chain
 
 end fromListChain'
 
+variable {r : Rel α α} in
 lemma toList_injective {a b : α} : Function.Injective (@RelSeriesHT.toList α r a b) :=
   fun _ _ h ↦ eq_of_heq (ext _ _ h).right.right
 
@@ -329,6 +329,7 @@ lemma length_snoc {a b : α} (x : a -[r]→* b) (c : α) (hr : r  b c) :
     length (snoc x c hr) = length x + 1 := by
   induction x <;> simp_all
 
+
 lemma snoc_injective {a b : α} (c : α) (hr : r b c) : Function.Injective (snoc (a := a) · c hr) := by
   intro x x' heq
   induction x with
@@ -347,7 +348,7 @@ lemma snoc_injective {a b : α} (c : α) (hr : r b c) : Function.Injective (snoc
     | cons a l hab =>
       simp_all only [forall_true_left, snoc_cons, cons.injEq, heq_eq_eq, and_true, true_and]
       cases heq.left
-      exact heq_of_eq (ih (eq_of_heq heq.right))
+      exact heq_of_eq (ih _ (eq_of_heq heq.right.left))
 
 end snoc
 
@@ -402,9 +403,15 @@ def append {a b c : α} (x : a -[r]→* b) (y : b -[r]→* c) : a -[r]→* c :=
   | .singleton a => y
   | .cons a l hl => .cons a (append l y) hl
 
-instance {a b b' : α}: HAppend (a -[r]→* b) (b -[r]→* b') (a -[r]→* b') where
+instance {r : α → α → Type*} {a b b' : α}: HAppend (a -[r]→* b) (b -[r]→* b') (a -[r]→* b') where
   hAppend l r := append l r
 
+instance {r : Rel α α} {a b b' : α}: HAppend (a -[r]→* b) (b -[r]→* b') (a -[r]→* b') where
+  hAppend l r := append l r
+
+section prop
+
+variable {r : Rel α α}
 @[simp]
 lemma singleton_append {a b : α} (x : a -[r]→* b) :
   (singleton (r := r) a) ++ x = x := rfl
@@ -548,6 +555,155 @@ lemma ofRel_append (a : α) {b c: α} (x : b -[r]→* c) (hr : r a b) : ofRel hr
 lemma append_ofRel {a b : α} (x : a -[r]→* b) (c : α) (hr : r b c) : x ++ ofRel hr = snoc x c hr := by
   induction x <;> simp_all ; rfl
 
+end prop
+section type
+
+variable {r : α → α → Type*}
+@[simp]
+lemma singleton_appendₜ {a b : α} (x : a -[r]→* b) :
+  (singleton (r := r) a) ++ x = x := rfl
+
+@[simp]
+lemma cons_appendₜ (a : α) {b b' c: α} (x : b -[r]→* b') (hr : r a b) (y : b' -[r]→* c) :
+  (cons a x hr) ++ y = .cons a (x ++ y) hr := rfl
+
+@[simp]
+lemma append_singletonₜ {a b : α} (x : a -[r]→* b) :
+  x ++ (singleton (r := r) b) = x := by
+  induction x <;> simp_all
+
+@[simp]
+lemma append_snocₜ {a b b' : α} (x : a -[r]→* b) (y : b -[r]→* b') (c : α)
+    (hr : r b' c) :
+    x ++ (snoc y c hr) = snoc (x ++ y) c hr := by
+  induction x <;> simp_all
+
+@[simp]
+lemma snoc_appendₜ {a b : α} (x : a -[r]→* b) (b' : α) (hr : r b b') {c : α} (y : b' -[r]→* c):
+    snoc x b' hr ++ y = x ++ cons b y hr := by
+      induction x <;> simp_all
+
+@[simp]
+lemma length_appendₜ {a b b' : α} (x : a -[r]→* b) (y : b -[r]→* b') :
+    length (x ++ y) = length x + length y := by
+  induction x with
+  | singleton a => simp
+  | cons a l hab ih =>
+    simp_all only [cons_appendₜ, length_cons]
+    exact Nat.add_right_comm l.length y.length 1
+
+@[simp]
+lemma append_assocₜ {a b c d : α} (x : a -[r]→* b) (y : b -[r]→* c)
+    (z : c -[r]→* d):
+  (x ++ y) ++ z = x ++ (y ++ z) := by
+  induction x <;> simp_all
+
+@[simp]
+lemma toList_appendₜ {a b b' : α} (x : a -[r]→* b) (y : b -[r]→* b') :
+    toList (x ++ y) = toList x ++ (toList y).tail := by
+  induction x with
+  | singleton a =>
+    simp
+    cases h:y.toList with
+    | nil => exact ((toList_ne_nil y) h).elim
+    | cons head tail =>
+      simp only [List.tail_cons, List.cons.injEq, and_true]
+      change (head :: tail).head (List.cons_ne_nil head tail) = y.head
+      simp_rw [← h,head_toList]
+      rfl
+  | cons a l hab ih => simp_all
+
+lemma toList_appendₜ' {a b b' : α} (x : a -[r]→* b) (y : b -[r]→* b') :
+    toList (x ++ y) = (toList x).dropLast ++ (toList y) := by
+  induction x with
+  | singleton a => simp
+  | cons a l hab ih =>
+    simp_all only [toList_appendₜ, cons_appendₜ, toList_cons]
+    cases l <;> simp
+
+lemma exists_eq_append_of_toList_eq_appendₜ {a b : α} (l : a -[r]→* b) (x y : List α) (hx : x ≠ []):
+  l.toList = x ++ y →
+    ∃ (c : α), ∃ m : a -[r]→* c, ∃ (n : c -[r]→* b), l = m ++ n ∧ m.toList = x ∧ n.toList.tail = y := by
+  induction l generalizing x hx y with
+  | singleton a =>
+    cases x <;> cases y <;> simp_all only [ne_eq, not_true_eq_false, toList_singleton, List.append_nil, List.cons_append,
+      List.cons.injEq, List.nil_eq, List.append_eq_nil_iff]
+    · rintro ⟨rfl, rfl⟩
+      use a, singleton a, singleton a, rfl,rfl
+      rfl
+    · simp only [reduceCtorEq, and_false, IsEmpty.forall_iff]
+  | cons a l hab ih =>
+    simp_all only [ne_eq, toList_cons]
+    obtain ⟨head,tail,rfl⟩ := List.ne_nil_iff_exists_cons.mp hx
+    clear hx
+    simp only [List.cons_append, List.cons.injEq, and_imp]
+    rintro rfl hl
+    cases tail with
+    | nil =>
+      simp only [List.nil_append] at hl
+      use a, singleton a, (cons a l hab)
+      simp_all
+    | cons head tail =>
+      simp_all only [List.cons_append]
+      specialize ih (head :: tail) y (List.cons_ne_nil head tail) rfl
+      obtain ⟨c',m',n',rfl,hm',rfl⟩ := ih
+      use c', (cons a m' hab),n'
+      simp_all
+
+lemma exists_eq_append_of_toList_eq_appendₜ' {a b : α} (l : a -[r]→* b) (x y : List α) (hy : y ≠ []):
+  l.toList = x ++ y →
+    ∃ (c : α), ∃ m : a -[r]→* c, ∃ (n : c -[r]→* b), l = m ++ n ∧ m.toList.dropLast = x ∧ n.toList = y := by
+  induction l generalizing x hy y with
+  | singleton a =>
+    simp_all only [ne_eq, toList_singleton]
+    cases y <;> cases x <;> simp [not_true_eq_false,List.nil_append, List.cons_append, List.cons.injEq, List.nil_eq, and_imp,
+      List.append_eq_nil_iff, and_false, IsEmpty.forall_iff] <;> try contradiction
+    rintro rfl rfl
+    use a, (singleton a), singleton a,rfl,rfl
+    rfl
+  | cons a l hab ih =>
+    simp only [toList_cons]
+    cases x with
+    | nil =>
+      rintro rfl
+      use a, singleton a, cons a l hab,rfl,rfl
+      rfl
+    | cons head tail =>
+      simp only [List.cons_append, List.cons.injEq, and_imp]
+      rintro rfl hl
+      obtain ⟨z,ll,lr,rfl,rfl,rfl⟩ := ih tail y hy hl
+      use z, cons a ll hab, lr, rfl
+      simp only [toList_cons, and_true]
+      exact List.dropLast_cons_of_ne_nil (toList_ne_nil ll)
+
+lemma append_right_injectiveₜ {a b c : α} (l : a -[r]→* b):
+    Function.Injective (α := b -[r]→* c) (l ++ ·) := by
+  intro x y h
+  induction l with
+  | singleton a =>
+    exact h
+  | cons a l hab ih =>
+    simp_all only [cons_appendₜ, cons.injEq, heq_eq_eq, and_true, true_and]
+    exact ih h
+
+lemma append_left_injectiveₜ {a b c : α} (l : b -[r]→* c) :
+    Function.Injective (α := a -[r]→* b) (· ++ l) := by
+  intro x y hxy
+  induction l with
+  | singleton a => simpa using hxy
+  | cons a l hab ih =>
+    rename_i b _
+    simp_all only [← snoc_appendₜ]
+    exact snoc_injective _ hab (ih hxy)
+
+@[simp]
+lemma ofRel_appendₜ (a : α) {b c: α} (x : b -[r]→* c) (hr : r a b) : ofRel hr ++ x = cons a x hr := rfl
+
+@[simp]
+lemma append_ofRelₜ {a b : α} (x : a -[r]→* b) (c : α) (hr : r b c) : x ++ ofRel hr = snoc x c hr := by
+  induction x <;> simp_all ; rfl
+
+end type
 
 end append
 
@@ -585,7 +741,7 @@ lemma reverse_copy {a b a' b' : α} (x : a -[r]→* b) (ha : a = a') (hb : b = b
     reverse (copy x ha hb) = copy (reverse x) hb ha := by
   cases ha; cases hb; rfl
 
-lemma fromListChain'_reverse (l : List α) (l_ne_nil : l ≠ []) (hl_chain' : l.Chain' r) :
+lemma fromListChain'_reverse {r : Rel α α} (l : List α) (l_ne_nil : l ≠ []) (hl_chain' : l.Chain' r) :
   fromListChain' (r := fun x y => r y x) (l.reverse) (List.reverse_ne_nil_iff.mpr l_ne_nil)
     (List.chain'_reverse.mpr hl_chain') =
       copy (reverse (fromListChain' l l_ne_nil hl_chain'))
@@ -593,7 +749,7 @@ lemma fromListChain'_reverse (l : List α) (l_ne_nil : l ≠ []) (hl_chain' : l.
   refine eq_of_heq (ext _ _ ?_).right.right
   simp
 
-lemma reverse_fromListChain' (l : List α) (l_ne_nil : l ≠ []) (hl_chain' : l.Chain' r) :
+lemma reverse_fromListChain' {r : Rel α α} (l : List α) (l_ne_nil : l ≠ []) (hl_chain' : l.Chain' r) :
     (fromListChain' l l_ne_nil hl_chain').reverse
       = copy (fromListChain' (l.reverse) (List.reverse_ne_nil_iff.mpr l_ne_nil)
           (List.chain'_reverse.mpr hl_chain'))
@@ -607,9 +763,15 @@ lemma reverse_reverse {a b : α} (x : a -[r]→* b) :
   induction x <;> simp_all
 
 @[simp]
-lemma reverse_append {a b c : α} (x : a -[r]→* b) (y : b -[r]→* c) :
+lemma reverse_append {r : Rel α α} {a b c : α} (x : a -[r]→* b) (y : b -[r]→* c) :
   (x ++ y).reverse = y.reverse ++ x.reverse := by
   induction x <;> simp_all
+
+@[simp]
+lemma reverse_appendₜ {r : α → α → Type*} {a b c : α} (x : a -[r]→* b) (y : b -[r]→* c) :
+  (x ++ y).reverse = y.reverse ++ x.reverse := by
+  induction x <;> simp_all
+
 
 @[simp]
 lemma length_reverse {a b : α} (x : a -[r]→* b) :
@@ -619,7 +781,7 @@ lemma length_reverse {a b : α} (x : a -[r]→* b) :
 end reverse
 
 section map
-
+variable {r : Rel α α}
 /--
 For two preorders `α, β`, if `f : α → β` is strictly monotonic, then a strict chain of `α`
 can be pushed out to a strict chain of `β` by
@@ -660,10 +822,14 @@ end map
 
 section mem
 
-instance membership {a b : α} : Membership α (a -[r]→* b) :=
+instance membership {r : Rel α α} {a b : α} : Membership α (a -[r]→* b) :=
   ⟨Function.swap (· ∈ Set.range ·)⟩
 
-variable {a b : α} {s : a -[r]→* b} {x : α}
+instance membershipₜ {r : α → α → Type*} {a b : α} : Membership α (a -[r]→* b) :=
+  ⟨Function.swap (· ∈ Set.range ·)⟩
+
+section prop
+variable {r : Rel α α} {a b : α} {s : a -[r]→* b} {x : α}
 theorem mem_def : x ∈ s ↔ x ∈ Set.range s := Iff.rfl
 
 @[simp] theorem mem_toList : x ∈ s.toList ↔ x ∈ s := by
@@ -733,10 +899,11 @@ lemma exists_eq_append_of_mem {a b : α} (l : a -[r]→* b) {c : α} (hc : c ∈
     · obtain ⟨x,y,rfl⟩ := ih hc
       use (cons a x hab), y
       rfl
-
+end prop
 end mem
 end RelSeriesHT
 
+variable {r : Rel α α}
 namespace RelSeriesHT
 section LE
 
