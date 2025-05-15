@@ -1,5 +1,6 @@
 import Catenary.RelSeriesHT.Codim
-open scoped RelSeriesHT
+
+open RelSeriesHT
 abbrev IsCatenaryOrder (α : Type*) [Preorder α] : Prop := Rel.IsCatenary (LT.lt : Rel α α)
 
 abbrev IsDiscreteOrder (α : Type*) [Preorder α] : Prop := Rel.IsDiscrete (LT.lt : Rel α α)
