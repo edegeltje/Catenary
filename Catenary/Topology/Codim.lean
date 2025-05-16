@@ -1,10 +1,11 @@
 import Catenary.RelSeriesHT.Defs
+import Mathlib.Logic.Function.Defs
 import Catenary.RelSeriesHT.Codim
 import Mathlib.Topology.Sober
 import Catenary.Order.Defs
 
 
-open TopologicalSpace Set.Notation RelSeriesHT
+open TopologicalSpace Set.Notation RelSeriesHT Function
 variable {X : Type*} [TopologicalSpace X] {U : Set X}
 
 
@@ -31,9 +32,6 @@ def inter_irred (hU : IsOpen U) : {s : (IrreducibleCloseds X) // (U ↓∩ s).No
       sorry
       ,x.val.isClosed.preimage_val⟩
 
-
-
-
 lemma inter_irred_strictMono (hU : IsOpen U) : StrictMono (inter_irred hU) := by sorry
 
 lemma closure_irred_bij {U : Set X} (U_open : IsOpen U) (U_nonempty : U.Nonempty) : Function.Bijective (closure_irred U_nonempty U_open):= sorry
@@ -41,11 +39,26 @@ lemma closure_irred_bij {U : Set X} (U_open : IsOpen U) (U_nonempty : U.Nonempty
 lemma closure_strict_mono_on_irreducible_closed {U : Set X} {A B: IrreducibleCloseds U}  (r: A < B) : (closure A.carrier) < (closure B) := by
   sorry
 
+
 --
--- Codimensions related
+-- Sup and bijection
+
+lemma l {A: Set X} {B: Set X} (T: A → B) (f: X → Nat) (hT: Bijective T) (hf: ∀ a : A, f a = f (T a) ):
+  -- f '' A = f '' (Subtype.val '' (T '' (Set.univ : Set (Subtype A)))) :=
+  f '' A = f '' (T '' A) := by
+  sorry
+
+
+lemma supremum_bijection_preserving {A: Set X} {B: Set X} (T: A → B) (f: X → Nat) (hT: Bijective T) (hf: ∀ a : A, f a = f (T a) ):
+  ⨆ (a ∈ A), f a  = ⨆ (b ∈ B), f b := by
+  sorry
+
+--
+-- Codimensions
 
 noncomputable def codim [TopologicalSpace X] (Y: IrreducibleCloseds X) : WithBot ℕ∞ :=
     ⨆ (U: IrreducibleCloseds X), (eCodim Y U)
+
 example (hU : IsOpen U) (a b : IrreducibleCloseds X) : (a -[(· < ·)]→* b) → (inter_irred hU ⟨a,sorry⟩) -[(· < ·)]→* (inter_irred hU ⟨b,sorry⟩) := by
   sorry
 
