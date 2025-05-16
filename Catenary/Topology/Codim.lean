@@ -43,6 +43,9 @@ lemma closure_strict_mono_on_irreducible_closed {U : Set X} {A B: IrreducibleClo
 --
 -- Sup and bijection
 
+variable {X : Type*} [TopologicalSpace X]
+variable {U : Set X}
+
 lemma l {A: Set X} {B: Set X} (T: A → B) (f: X → Nat) (hT: Bijective T) (hf: ∀ a : A, f a = f (T a) ):
   -- f '' A = f '' (Subtype.val '' (T '' (Set.univ : Set (Subtype A)))) :=
   f '' A = f '' (T '' A) := by
@@ -53,8 +56,19 @@ lemma supremum_bijection_preserving {A: Set X} {B: Set X} (T: A → B) (f: X →
   ⨆ (a ∈ A), f a  = ⨆ (b ∈ B), f b := by
   sorry
 
+noncomputable def closure_of_irreducible_subset {U: Set X} (A: IrreducibleCloseds U): IrreducibleCloseds X :=
+  ⟨closure (A: Set U), sorry,  by exact isClosed_closure⟩
+
+
+lemma foo_strictMono: StrictMono (closure_of_irreducible_subset : IrreducibleCloseds U → IrreducibleCloseds X) := by sorry
 --
 -- Codimensions
+
+-- lemma closure_ecodim_preserving {Y: IrreducibleCloseds X} {U: Set X}{Z: IrreducibleCloseds X}(hU: IsOpen U)(hi: (U ∩ Y).Nonempty):
+--   eCodim Y Z = eCodim ⟨closure (Y ∩ U), sorry, sorry⟩ Z := by
+--   sorry
+
+-- lemma closure_ecodim_preserving
 
 noncomputable def codim [TopologicalSpace X] (Y: IrreducibleCloseds X) : WithBot ℕ∞ :=
     ⨆ (U: IrreducibleCloseds X), (eCodim Y U)
@@ -67,6 +81,11 @@ lemma codim_nonneg [TopologicalSpace X] (Y: IrreducibleCloseds X) : 0 ≤ codim 
   sorry
 
 -- this is the theorem 5.11.2 to prove
-theorem codimension_theorem
-    {U: Set X}(Y: IrreducibleCloseds X) (hU: IsOpen U)(hi: (U ∩ Y).Nonempty ) : codim Y = @codim U _ ⟨((U ↓∩ Y): Set U), sorry, sorry ⟩   := by
+theorem codimension_theorem [TopologicalSpace X]
+    {U: Set X}(Y: IrreducibleCloseds X) (hU: IsOpen U)(hi: (U ∩ Y).Nonempty ) :
+    -- codim Y = @codim U _ ⟨((U ↓∩ Y): Set U), sorry, sorry ⟩
+    codim Y = 1
+    := by
+  dsimp [codim]
+
   sorry
