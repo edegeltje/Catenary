@@ -21,7 +21,12 @@ def closure_irred {U : Set X} (U_open : IsOpen U) :
   toFun := fun T ↦
     ⟨⟨closure (X := X) T.carrier,
       closure_irred_of_irred T.carrier T.is_irreducible',
-      isClosed_closure⟩, sorry⟩
+      isClosed_closure⟩, by
+    obtain ⟨x, h⟩ := T.is_irreducible'.left
+    use x
+    apply subset_closure
+    simp
+    exact h⟩
   invFun := fun x =>
     ⟨U ↓∩ x,
       by
