@@ -43,9 +43,19 @@ lemma catenary_iff_catenary_cover : IsCatenaryTopologicalSpace X ↔ ∃ ι : Ty
       intro x
       -- rw [← h] at x
       use x, (by rfl)
+      subst h
       match x with
       | RelSeriesHT.singleton T => rfl
-      | RelSeriesHT.cons T l Tltb => simp; have : T < T' := sorry; rw [h] at this; exact lt_irrefl T' this --lt_trans Tltb (lt_of_relSeriesHT)
+      | RelSeriesHT.cons (b := b) T2 l Tltb =>
+        have : T2 ≠ b := by
+          intro hT2b
+          subst hT2b
+          exact lt_irrefl T2 Tltb
+        have := le_of_lt (lt_of_relSeriesHT this.symm l)
+        -- have :=  this
+        have := Tltb.right
+        contradiction
+        --rw [LT.lt] at Tltb--simp; have : T < T' := by sorry; rw [h] at this; exact lt_irrefl T' this --lt_trans Tltb (lt_of_relSeriesHT)
       -- have : x = singleton T := by
       --   match x with
       --   | RelSeriesHT.singleton T => rfl
