@@ -15,32 +15,35 @@ lemma closure_irred_of_irred {U : Set X} (T : Set U) (T_irred : IsIrreducible T)
     IsIrreducible (closure (X := X) T) :=
   by sorry
 
-def closure_irred {U : Set X} (U_open : IsOpen U) :
-    RelIso (α := IrreducibleCloseds U)
-           (β := {s : IrreducibleCloseds X // (U ↓∩ s).Nonempty})
-           (· < ·) (· < ·) where
-  toFun := fun T ↦
-    ⟨⟨closure (X := X) T.carrier,
-      closure_irred_of_irred T.carrier T.is_irreducible',
-      isClosed_closure⟩, by
-    obtain ⟨x, h⟩ := T.is_irreducible'.left
-    use x
-    apply subset_closure
-    simp
-    exact h⟩
-  invFun := fun x =>
-    ⟨U ↓∩ x,
+def irr_closed_restrict [TopologicalSpace X]{U : Set X} (Y : IrreducibleCloseds X) (hU : IsOpen U) (hi : (U ∩ Y).Nonempty): IrreducibleCloseds (U):=
+    ⟨U ↓∩ Y,
       by
-        have := x.val.isIrreducible.isPreirreducible
+        have := Y.isIrreducible.isPreirreducible
         constructor
-        · exact x.prop
+        · sorry
         rw [isPreirreducible_iff_isClosed_union_isClosed] at this ⊢
         intro z₁ z₂ hz₁ hz₂ hunion
         specialize this (closure z₁) (closure z₂) (isClosed_closure) isClosed_closure
         -- rw [← closure_union, ← Set.image_union] at this
         -- specialize this (exact?%)
         sorry
-      , x.val.isClosed.preimage_val⟩
+      , Y.isClosed.preimage_val⟩
+
+
+-- This defines an order preservign map
+def closure_irred {U : Set X} (U_open : IsOpen U) :
+    RelIso (α := IrreducibleCloseds U)
+           (β := {s : IrreducibleCloseds X // (U ∩ s).Nonempty})
+           (· < ·) (· < ·) where
+  toFun := fun T ↦
+    ⟨⟨closure (X := X) T.carrier,
+      closure_irred_of_irred T.carrier T.is_irreducible',
+      isClosed_closure⟩, by
+      obtain ⟨x, h⟩ := T.is_irreducible'.left
+      use x
+      sorry
+    ⟩
+  invFun Y := irr_closed_restrict Y U_open Y.prop
   left_inv      := sorry
   right_inv     := sorry
   map_rel_iff'  := sorry
@@ -50,6 +53,7 @@ lemma closure_strict_mono_on_irreducible_closed {U : Set X} {A B : IrreducibleCl
   by sorry
 
 -- Sup and bijection
+
 
 lemma bijection_trans {A: Set X} {B: Set X} (T: A → B) (f: X → ℕ∞) (hf: ∀ a : A, f a = f (T a) ):
   f '' A = f '' ↑(T '' (Set.univ (α := A))) := by
@@ -77,12 +81,12 @@ lemma bijection_trans {A: Set X} {B: Set X} (T: A → B) (f: X → ℕ∞) (hf: 
   exact yfb
 
 
-lemma iSup_in_eq_sSup_image {A : Set X} [h: Nonempty A] (f : X → ℕ∞) :
+lemma iSup_in_eq_sSup_image {A : Set X} (f : X → ℕ∞) :
     (⨆ x ∈ A, f x) = sSup (f '' A) := by
   rw [sSup_image]
 
 
-lemma supremum_bijection_preserving {A : Set X} {B : Set X} [h₁: Nonempty A] [h₂: Nonempty B]
+lemma supremum_bijection_preserving {A : Set X} {B : Set X}
     (T : A → B) (f : X → ℕ∞) (hT : Bijective T) (hf : ∀ a : A, f a = f (T a)) :
       ⨆ (a ∈ A), f a  = ⨆ (b ∈ B), f b :=  by
   have h_from_bijection_trans : f '' A = f '' (Subtype.val '' (T '' (Set.univ : Set A))) :=
@@ -100,16 +104,12 @@ noncomputable def closure_of_irreducible_subset {U : Set X} (A : IrreducibleClos
     IrreducibleCloseds X :=
   ⟨closure (A : Set U), sorry, by exact isClosed_closure⟩
 
-lemma foo_strictMono :
-    StrictMono (closure_of_irreducible_subset : IrreducibleCloseds U → IrreducibleCloseds X) :=
-  by sorry
+
+-- lemma foo_strictMono :
+--     StrictMono (closure_of_irreducible_subset : IrreducibleCloseds U → IrreducibleCloseds X) :=
+--   by sorry
 
 -- Codimensions
-
-lemma closure_ecodim_preserving {Y : IrreducibleCloseds X} {U : Set X} {Z : IrreducibleCloseds X}
-    (hU : IsOpen U) (hi : (U ∩ Y).Nonempty) :
-  eCodim Y Z = eCodim ⟨closure (Y ∩ U), sorry, sorry⟩ Z := by
-  sorry
 
 noncomputable def codim [TopologicalSpace X] (Y : IrreducibleCloseds X) : WithBot ℕ∞ :=
   ⨆ (U : IrreducibleCloseds X), (eCodim Y U)
@@ -119,16 +119,41 @@ example (hU : IsOpen U) (a b : IrreducibleCloseds X) :
     ((closure_irred hU).invFun ⟨a, sorry⟩) -[(· < ·)]→* ((closure_irred hU).invFun ⟨b, sorry⟩) :=
   by sorry
 
--- not sure if it's needed, for now let's keep it commented out
--- lemma codim_nonneg [TopologicalSpace X] (Y : IrreducibleCloseds X) :
---     0 ≤ codim Y :=
---   by sorry
+
+-- this could be proven in a more general context of relations
+lemma iso_length_preserving {U : Set X} (U_open : IsOpen U)
+    (f:RelIso (α := IrreducibleCloseds U)
+      (β := {s : IrreducibleCloseds X // (U ∩ s).Nonempty})
+      (· < ·) (· < ·) ) (a b : IrreducibleCloseds U) (x : a -[(· < ·)]→* b ): x.reduce.length = (map f.toRelEmbedding.toRelHom x).reduce.length
+     :=by
+  sorry
+
+-- -- this could be proven in a more general context of relations
+lemma iso_eCodim_preserving {U : Set X} (U_open : IsOpen U)
+    (f:RelIso (α := IrreducibleCloseds U)
+      (β := {s : IrreducibleCloseds X // (U ∩ s).Nonempty})
+      (· < ·) (· < ·) ) (a b : IrreducibleCloseds U): eCodim a b = eCodim (f a) (f b):= by
+  -- use iso_length_preserving with both the RelIso way
+  sorry
+
+
+lemma ecodim_eq_sup_nonempty {U: Set X} (Y: IrreducibleCloseds X) (hU: (U ∩ Y).Nonempty) (a: IrreducibleCloseds X):
+  eCodim Y = eCodim
+
+lemma codim_eq_sup_nonempty {U: Set X} (Y: IrreducibleCloseds X) (hU: (U ∩ Y).Nonempty):
+  codim Y = ⨆ (s: {s:IrreducibleCloseds X // (U ∩ s).Nonempty}), eCodim Y s := by
+  sorry
+
+
 
 -- this is the theorem 5.11.2 to prove
 theorem codimension_theorem [TopologicalSpace X]
     {U : Set X} (Y : IrreducibleCloseds X) (hU : IsOpen U) (hi : (U ∩ Y).Nonempty) :
-    -- codim Y = @codim U _ ⟨((U ↓∩ Y): Set U), sorry, sorry ⟩
-    codim Y = 1 :=
-  by
-    dsimp [codim]
-    sorry
+    codim Y = codim (X:=U) (irr_closed_restrict Y hU hi):= by
+  rw [codim_eq_sup_nonempty Y hi]
+
+  dsimp [codim]
+
+  apply Equiv.iSup_congr (closure_irred hU).toEquiv.symm
+  simp
+  intro a ha
