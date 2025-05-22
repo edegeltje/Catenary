@@ -39,8 +39,8 @@ def closure_irred {U : Set X} (U_open : IsOpen U) :
     ⟨⟨closure (X := X) T.carrier,
       closure_irred_of_irred T.carrier T.is_irreducible',
       isClosed_closure⟩, by
-      obtain ⟨x, h⟩ := T.is_irreducible'.left
-      use x
+        obtain ⟨x, h⟩ := T.is_irreducible'.left
+        use x
         simp only [IrreducibleCloseds.coe_mk, Set.mem_inter_iff, Subtype.coe_prop, true_and]
         apply subset_closure
         simp only [Set.mem_image, Subtype.exists, exists_and_right, exists_eq_right,
@@ -57,6 +57,7 @@ lemma closure_strict_mono_on_irreducible_closed {U : Set X} {A B : IrreducibleCl
   by sorry
 
 -- Sup and bijection
+
 
 
 lemma bijection_trans {A: Set X} {B: Set X} (T: A → B) (f: X → ℕ∞) (hf: ∀ a : A, f a = f (T a) ):
@@ -109,6 +110,9 @@ noncomputable def closure_of_irreducible_subset {U : Set X} (A : IrreducibleClos
   ⟨closure (A : Set U), sorry, by exact isClosed_closure⟩
 
 
+-- lemma foo_strictMono :
+--     StrictMono (closure_of_irreducible_subset : IrreducibleCloseds U → IrreducibleCloseds X) :=
+--   by sorry
 
 -- Codimensions
 
@@ -138,29 +142,11 @@ lemma iso_eCodim_preserving {U : Set X} (U_open : IsOpen U)
   sorry
 
 
+-- lemma ecodim_eq_sup_nonempty {U: Set X} (Y: IrreducibleCloseds X) (hU: (U ∩ Y).Nonempty) (a: IrreducibleCloseds X):
+--   eCodim Y = eCodim
 
 lemma codim_eq_sup_nonempty {U: Set X} (Y: IrreducibleCloseds X) (hU: (U ∩ Y).Nonempty):
   codim Y = ⨆ (s: {s:IrreducibleCloseds X // (U ∩ s).Nonempty}), eCodim Y s := by
-  sorry
-
-
-lemma length_equiv_inv {r: Rel (Set X) (Set X)}{a b : Set X} {s : Rel (Set X) (Set X)} (e: r ≃r s) (x : a -[r]→* b):
-  x.reduce.length = (equiv e x).reduce.length := by
-  cases x
-  case singleton =>
-    simp
-    rfl
-
-  case cons _ l hab  rr  =>
-    simp [reduce]
-    sorry
-
-
-
-lemma eCodim_equiv_inv {r: Rel (Set X) (Set X)} {a b : Set X} {s : Rel (Set X) (Set X)} (e: r ≃r s) :
-    eCodim a b = eCodim (e a) (e b):= by
-  unfold eCodim
-  unfold Rel.eCodim
   sorry
 
 
@@ -176,7 +162,4 @@ theorem codimension_theorem [TopologicalSpace X]
   apply Equiv.iSup_congr (closure_irred hU).toEquiv.symm
   simp
   intro a ha
-  rw [iso_eCodim_preserving hU (closure_irred hU)
-        (irr_closed_restrict Y hU hi)]
-
   sorry
