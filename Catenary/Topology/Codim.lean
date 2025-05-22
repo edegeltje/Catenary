@@ -137,8 +137,9 @@ lemma iso_eCodim_preserving {U : Set X} (U_open : IsOpen U)
   sorry
 
 
-lemma ecodim_eq_sup_nonempty {U: Set X} (Y: IrreducibleCloseds X) (hU: (U ∩ Y).Nonempty) (a: IrreducibleCloseds X):
-  eCodim Y = eCodim
+lemma ecodim_eq_sup_nonempty {U: Set X} (Y: IrreducibleCloseds X)(hU : IsOpen U) (hi: (U ∩ Y).Nonempty) (a: IrreducibleCloseds X)(ha : (U ∩ ↑a).Nonempty):
+  eCodim Y a = eCodim (irr_closed_restrict Y hU hi) ((closure_irred hU).symm ⟨a, ha⟩):= by
+  sorry
 
 lemma codim_eq_sup_nonempty {U: Set X} (Y: IrreducibleCloseds X) (hU: (U ∩ Y).Nonempty):
   codim Y = ⨆ (s: {s:IrreducibleCloseds X // (U ∩ s).Nonempty}), eCodim Y s := by
@@ -157,3 +158,5 @@ theorem codimension_theorem [TopologicalSpace X]
   apply Equiv.iSup_congr (closure_irred hU).toEquiv.symm
   simp
   intro a ha
+  rw [ecodim_eq_sup_nonempty Y hU hi a ha]
+  rfl
