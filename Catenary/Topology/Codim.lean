@@ -3,6 +3,7 @@ import Mathlib.Logic.Function.Defs
 import Catenary.RelSeriesHT.Codim
 import Mathlib.Topology.Sober
 import Catenary.Order.Defs
+import Mathlib.Data.Nat.Lattice
 
 open TopologicalSpace Set.Notation RelSeriesHT Function
 
@@ -50,16 +51,50 @@ lemma closure_strict_mono_on_irreducible_closed {U : Set X} {A B : IrreducibleCl
 
 -- Sup and bijection
 
-lemma l {A : Set X} {B : Set X} (T : A → B) (f : X → Nat)
-    (hT : Bijective T) (hf : ∀ a : A, f a = f (T a)) :
-    -- f '' A = f '' (Subtype.val '' (T '' (Set.univ : Set (Subtype A)))) :=
-    f '' A = f '' (T '' A) :=
-  by sorry
+lemma bijection_trans {A: Set X} {B: Set X} (T: A → B) (f: X → ℕ∞) (hf: ∀ a : A, f a = f (T a) ):
+  f '' A = f '' ↑(T '' (Set.univ (α := A))) := by
+  ext y
+  constructor
+  · rintro ⟨a, aA, yfa⟩
+    let b:B:= T ⟨a, aA⟩
+    use b
+    constructor
+    · simp
+      use a, aA
+    change f (↑(T ⟨a, aA⟩)) = y
+    rw [←hf]
+    rw [yfa]
 
-lemma supremum_bijection_preserving {A : Set X} {B : Set X}
-    (T : A → B) (f : X → Nat) (hT : Bijective T) (hf : ∀ a : A, f a = f (T a)) :
-    ⨆ (a ∈ A), f a  = ⨆ (b ∈ B), f b :=
-  by sorry
+  rintro ⟨b, bB, yfb⟩
+  -- bB : b ∈ Subtype.val '' (T '' Set.univ)
+  rcases bB with ⟨b_from_B, ⟨a_from_A, _h_a_in_univ, h_T_eq_b_from_B⟩, h_val_eq_b⟩
+  rw [←h_val_eq_b] at yfb
+  rw [← h_T_eq_b_from_B] at yfb
+  rw [←hf] at yfb
+  use a_from_A
+  constructor
+  · exact Subtype.coe_prop a_from_A
+  exact yfb
+
+
+lemma iSup_in_eq_sSup_image {A : Set X} [h: Nonempty A] (f : X → ℕ∞) :
+    (⨆ x ∈ A, f x) = sSup (f '' A) := by
+  rw [sSup_image]
+
+
+lemma supremum_bijection_preserving {A : Set X} {B : Set X} [h₁: Nonempty A] [h₂: Nonempty B]
+    (T : A → B) (f : X → ℕ∞) (hT : Bijective T) (hf : ∀ a : A, f a = f (T a)) :
+      ⨆ (a ∈ A), f a  = ⨆ (b ∈ B), f b :=  by
+  have h_from_bijection_trans : f '' A = f '' (Subtype.val '' (T '' (Set.univ : Set A))) :=
+    bijection_trans T f hf
+  rw [iSup_in_eq_sSup_image, iSup_in_eq_sSup_image]
+  rw [bijection_trans T f hf]
+  have h_inner_set_equality : Subtype.val '' (T '' (Set.univ : Set A)) = B := by
+    rw [Set.image_univ]
+    rw [(Function.Bijective.surjective hT).range_eq]
+    exact Subtype.coe_image_univ B
+  rw [h_inner_set_equality]
+
 
 noncomputable def closure_of_irreducible_subset {U : Set X} (A : IrreducibleCloseds U) :
     IrreducibleCloseds X :=
@@ -71,12 +106,10 @@ lemma foo_strictMono :
 
 -- Codimensions
 
--- lemma closure_ecodim_preserving {Y : IrreducibleCloseds X} {U : Set X} {Z : IrreducibleCloseds X}
---     (hU : IsOpen U) (hi : (U ∩ Y).Nonempty) :
---   eCodim Y Z = eCodim ⟨closure (Y ∩ U), sorry, sorry⟩ Z := by
---   sorry
-
--- lemma closure_ecodim_preserving
+lemma closure_ecodim_preserving {Y : IrreducibleCloseds X} {U : Set X} {Z : IrreducibleCloseds X}
+    (hU : IsOpen U) (hi : (U ∩ Y).Nonempty) :
+  eCodim Y Z = eCodim ⟨closure (Y ∩ U), sorry, sorry⟩ Z := by
+  sorry
 
 noncomputable def codim [TopologicalSpace X] (Y : IrreducibleCloseds X) : WithBot ℕ∞ :=
   ⨆ (U : IrreducibleCloseds X), (eCodim Y U)
@@ -86,10 +119,10 @@ example (hU : IsOpen U) (a b : IrreducibleCloseds X) :
     ((closure_irred hU).invFun ⟨a, sorry⟩) -[(· < ·)]→* ((closure_irred hU).invFun ⟨b, sorry⟩) :=
   by sorry
 
--- not sure if it's needed
-lemma codim_nonneg [TopologicalSpace X] (Y : IrreducibleCloseds X) :
-    0 ≤ codim Y :=
-  by sorry
+-- not sure if it's needed, for now let's keep it commented out
+-- lemma codim_nonneg [TopologicalSpace X] (Y : IrreducibleCloseds X) :
+--     0 ≤ codim Y :=
+--   by sorry
 
 -- this is the theorem 5.11.2 to prove
 theorem codimension_theorem [TopologicalSpace X]
