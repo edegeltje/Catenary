@@ -135,6 +135,9 @@ lemma length_singleton (a : α) : (singleton (r := r) a).length = 0 := rfl
 lemma length_cons (a : α) {b b' : α} (l : b -[r]→* b') (hab : r a b) :
   (l.cons a hab).length = l.length + 1 := rfl
 
+lemma length_nonneg {a b : α} (x : a -[r]→* b) : 0 ≤ x.length := by
+  cases x <;> simp_all
+
 lemma length_pos_of_ne {a b : α} (hne : a ≠ b) (x : a -[r]→* b) :
   0 < x.length := by
   cases x <;> simp_all
