@@ -105,9 +105,6 @@ noncomputable def closure_of_irreducible_subset {U : Set X} (A : IrreducibleClos
   ⟨closure (A : Set U), sorry, by exact isClosed_closure⟩
 
 
--- lemma foo_strictMono :
---     StrictMono (closure_of_irreducible_subset : IrreducibleCloseds U → IrreducibleCloseds X) :=
---   by sorry
 
 -- Codimensions
 
@@ -137,12 +134,29 @@ lemma iso_eCodim_preserving {U : Set X} (U_open : IsOpen U)
   sorry
 
 
-lemma ecodim_eq_sup_nonempty {U: Set X} (Y: IrreducibleCloseds X)(hU : IsOpen U) (hi: (U ∩ Y).Nonempty) (a: IrreducibleCloseds X)(ha : (U ∩ ↑a).Nonempty):
-  eCodim Y a = eCodim (irr_closed_restrict Y hU hi) ((closure_irred hU).symm ⟨a, ha⟩):= by
-  sorry
 
 lemma codim_eq_sup_nonempty {U: Set X} (Y: IrreducibleCloseds X) (hU: (U ∩ Y).Nonempty):
   codim Y = ⨆ (s: {s:IrreducibleCloseds X // (U ∩ s).Nonempty}), eCodim Y s := by
+  sorry
+
+
+lemma length_equiv_inv {r: Rel (Set X) (Set X)}{a b : Set X} {s : Rel (Set X) (Set X)} (e: r ≃r s) (x : a -[r]→* b):
+  x.reduce.length = (equiv e x).reduce.length := by
+  cases x
+  case singleton =>
+    simp
+    rfl
+
+  case cons _ l hab  rr  =>
+    simp [reduce]
+    sorry
+
+
+
+lemma eCodim_equiv_inv {r: Rel (Set X) (Set X)} {a b : Set X} {s : Rel (Set X) (Set X)} (e: r ≃r s) :
+    eCodim a b = eCodim (e a) (e b):= by
+  unfold eCodim
+  unfold Rel.eCodim
   sorry
 
 
@@ -158,5 +172,7 @@ theorem codimension_theorem [TopologicalSpace X]
   apply Equiv.iSup_congr (closure_irred hU).toEquiv.symm
   simp
   intro a ha
-  rw [ecodim_eq_sup_nonempty Y hU hi a ha]
-  rfl
+
+
+
+  sorry
