@@ -869,6 +869,47 @@ def coe_subtype {p : α → Prop} {ap bp : {a : α // p a}} : ap -[fun ap bp : {
 
 end equiv
 
+
+section MapProperties
+variable {α β γ : Type*} {r : Rel α α} {s : Rel β β} {t : Rel γ γ}
+
+@[simp]
+lemma map_map (g_hom : s →r t) (f_hom : r →r s) {a₁ b₁ : α} (x : a₁ -[r]→* b₁) :
+    RelSeriesHT.map g_hom (RelSeriesHT.map f_hom x) = RelSeriesHT.map (RelHom.comp g_hom f_hom) x := by
+  induction x with
+  | singleton a => simp only [map_singleton, RelHom.comp_apply]
+  | cons a l hab ih => simp only [map_cons, RelHom.comp_apply, ih, RelHom.map_rel]
+
+
+end MapProperties
+
+section equiv
+
+def copy2 {a b a' b' : α} (x : a -[r]→* b) (ha : a = a') (hb : b = b') :
+  a' -[r]→* b' := cast (ha ▸ hb ▸ rfl) x
+
+lemma symm_inv {β : Type*}{r: Rel α α} {s : Rel β β} (e : r ≃r s)(a : α) : e.symm (e a) = a:= by
+  exact RelIso.symm_apply_apply e a
+
+
+def equiv {β : Type*}{α: Type*}{r: Rel α α} {s : Rel β β} (e: r ≃r s) {a b : α} :  a -[r]→* b ≃ (e a) -[s]→* (e b)  where
+  toFun :=
+    map (a := a) (b := b) (r := r) (s := s)  e.toRelEmbedding
+  invFun x:=
+    copy (map (a := e a) (b:= e b) (r := s) (s := r)  e.symm.toRelEmbedding x) (by simp) (by simp)
+
+  left_inv := by
+    intro x
+    cases x
+    case singleton =>
+      · simp
+        sorry
+    case cons _ l h =>
+      simp
+      sorry
+  right_inv := sorry
+end equiv
+
 section mem
 
 instance membership {r : Rel α α} {a b : α} : Membership α (a -[r]→* b) :=
