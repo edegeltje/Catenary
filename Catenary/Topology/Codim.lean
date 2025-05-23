@@ -172,7 +172,7 @@ theorem codimension_theorem [TopologicalSpace X]
   apply Equiv.iSup_congr (closure_irred hU).toEquiv.symm
   simp
   intro a ha
-
-
+  rw [iso_eCodim_preserving hU (closure_irred hU)
+        (irr_closed_restrict Y hU hi)]
 
   sorry

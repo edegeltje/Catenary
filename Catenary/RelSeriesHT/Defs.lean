@@ -852,7 +852,7 @@ def equiv {β : Type*}{α: Type*}{r: Rel α α} {s : Rel β β} (e: r ≃r s) {a
   left_inv := by
     intro x
     cases x
-    case singleton =>
+    case singleton rr  aa =>
       · simp
         sorry
     case cons _ l h =>
