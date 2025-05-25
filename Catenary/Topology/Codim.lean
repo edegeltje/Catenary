@@ -85,6 +85,10 @@ lemma iSup_in_eq_sSup_image {A : Set X} (f : X → ℕ∞) :
     (⨆ x ∈ A, f x) = sSup (f '' A) := by
   rw [sSup_image]
 
+lemma iSup_type_eq_sSup_image {A : Set X} (f : X → ℕ∞) :
+    (⨆ x : X, f x) = sSup (f '' A) := by
+  rw [sSup_image]
+
 
 lemma supremum_bijection_preserving {A : Set X} {B : Set X}
     (T : A → B) (f : X → ℕ∞) (hT : Bijective T) (hf : ∀ a : A, f a = f (T a)) :
@@ -111,12 +115,6 @@ noncomputable def closure_of_irreducible_subset {U : Set X} (A : IrreducibleClos
 noncomputable def codim [TopologicalSpace X] (Y : IrreducibleCloseds X) : WithBot ℕ∞ :=
   ⨆ (U : IrreducibleCloseds X), (eCodim Y U)
 
-example (hU : IsOpen U) (a b : IrreducibleCloseds X) :
-    (a -[(· < ·)]→* b) →
-    ((closure_irred hU).invFun ⟨a, sorry⟩) -[(· < ·)]→* ((closure_irred hU).invFun ⟨b, sorry⟩) :=
-  by sorry
-
-
 -- this could be proven in a more general context of relations
 lemma iso_length_preserving {U : Set X} (U_open : IsOpen U)
     (f:RelIso (α := IrreducibleCloseds U)
@@ -133,13 +131,11 @@ lemma iso_eCodim_preserving {U : Set X} (U_open : IsOpen U)
   -- use iso_length_preserving with both the RelIso way
   sorry
 
-
-
 lemma codim_eq_sup_nonempty {U: Set X} (Y: IrreducibleCloseds X) (hU: (U ∩ Y).Nonempty):
   codim Y = ⨆ (s: {s:IrreducibleCloseds X // (U ∩ s).Nonempty}), eCodim Y s := by
   sorry
 
-
+-- prove that length is preserved under Rel equiv
 lemma length_equiv_inv {r: Rel (Set X) (Set X)}{a b : Set X} {s : Rel (Set X) (Set X)} (e: r ≃r s) (x : a -[r]→* b):
   x.reduce.length = (equiv e x).reduce.length := by
   cases x
@@ -151,13 +147,26 @@ lemma length_equiv_inv {r: Rel (Set X) (Set X)}{a b : Set X} {s : Rel (Set X) (S
     simp [reduce]
     sorry
 
+-- def equiv {β : Type*}{α: Type*}{r: Rel α α} {s : Rel β β} (e: r ≃r s) {a b : α} :  a -[r]→* b ≃ (e a) -[s]→* (e b)  where
 
 
-lemma eCodim_equiv_inv {r: Rel (Set X) (Set X)} {a b : Set X} {s : Rel (Set X) (Set X)} (e: r ≃r s) :
+lemma eCodim_equiv_inv  {a b : Set X} (e : RelIso (LT.lt : Set X → Set X → Prop) (LT.lt : Set X → Set X → Prop)):
     eCodim a b = eCodim (e a) (e b):= by
   unfold eCodim
   unfold Rel.eCodim
-  sorry
+  apply Equiv.iSup_congr
+  intro x
+  rw [←length_equiv_inv]
+
+
+-- lemma eCodim_equiv_inv2  {a b : Set X} (e : RelIso (α := X) (β:= X) (· < ·) (· < ·)):
+--     eCodim a b = eCodim (e a) (e b):= by
+--   unfold eCodim
+--   unfold Rel.eCodim
+--   apply Equiv.iSup_congr
+--   intro x
+--   rw [←length_equiv_inv]
+
 
 
 
@@ -172,7 +181,25 @@ theorem codimension_theorem [TopologicalSpace X]
   apply Equiv.iSup_congr (closure_irred hU).toEquiv.symm
   simp
   intro a ha
-  rw [iso_eCodim_preserving hU (closure_irred hU)
-        (irr_closed_restrict Y hU hi)]
+  sorry
+  -- rw [←eCodim_equiv_inv  (iso_eCodim_preserving hU (closure_irred hU) _)]
+  -- rw [iso_eCodim_preserving hU (closure_irred hU)
+        -- (irr_closed_restrict Y hU hi)]
+
+
+theorem codimension_theorem2 [TopologicalSpace X]
+    {U : Set X} (Y : IrreducibleCloseds X) (hU : IsOpen U) (hi : (U ∩ Y).Nonempty) :
+    codim Y = codim (X:=U) ((closure_irred hU).invFun ⟨Y, hi⟩ ):= by
+  rw [codim_eq_sup_nonempty Y hi]
+
+  dsimp [codim]
+
+  apply Equiv.iSup_congr (closure_irred hU).toEquiv.symm
+  simp
+  intro a ha
+  #check (closure_irred hU)
+
+  #check eCodim_equiv_inv (closure_irred hU)
 
   sorry
+  -- rw [←eCodim_equiv_inv closure_irred ]
