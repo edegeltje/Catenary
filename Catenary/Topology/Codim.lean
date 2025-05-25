@@ -194,3 +194,4 @@ theorem codimension_theorem2
   intro a_sub _ha
   rw [← eCodim_subtype_equiv_val Y ⟨a_sub, _ha⟩]
   apply (eCodim_equiv_inv_irr' hU (closure_irred hU) ⟨Y, hi⟩ ⟨a_sub, _ha⟩).symm
+

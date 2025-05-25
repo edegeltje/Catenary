@@ -135,6 +135,9 @@ lemma length_singleton (a : α) : (singleton (r := r) a).length = 0 := rfl
 lemma length_cons (a : α) {b b' : α} (l : b -[r]→* b') (hab : r a b) :
   (l.cons a hab).length = l.length + 1 := rfl
 
+lemma length_nonneg {a b : α} (x : a -[r]→* b) : 0 ≤ x.length := by
+  cases x <;> simp_all
+
 lemma length_pos_of_ne {a b : α} (hne : a ≠ b) (x : a -[r]→* b) :
   0 < x.length := by
   cases x <;> simp_all
@@ -841,11 +844,6 @@ def copy2 {a b a' b' : α} (x : a -[r]→* b) (ha : a = a') (hb : b = b') :
 
 lemma symm_inv {β : Type*}{r: Rel α α} {s : Rel β β} (e : r ≃r s)(a : α) : e.symm (e a) = a:= by
   exact RelIso.symm_apply_apply e a
-
--- def map2 {β : Type*} {s : Rel β β} (f : r →r s) {a b : α} (x : a -[r]→* b) :
---     (f a) -[s]→* (f b) := match x with
---   | .singleton a => .singleton (f a)
---   | .cons a l hr => .cons (f a) (map f l) (f.map_rel hr)
 
 
 def equiv {β : Type*}{α: Type*}{r: Rel α α} {s : Rel β β} (e: r ≃r s) {a b : α} :  a -[r]→* b ≃ (e a) -[s]→* (e b)  where
