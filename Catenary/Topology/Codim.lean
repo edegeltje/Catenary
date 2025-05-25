@@ -34,7 +34,7 @@ def irr_closed_restrict [TopologicalSpace X]{U : Set X} (Y : IrreducibleCloseds 
 def closure_irred {U : Set X} (U_open : IsOpen U) :
     RelIso (α := IrreducibleCloseds U)
            (β := {s : IrreducibleCloseds X // (U ∩ s).Nonempty})
-           (· < ·) (· < ·) where
+           (LT.lt) (LT.lt) where
   toFun := fun T ↦
     ⟨⟨closure (X := X) T.carrier,
       closure_irred_of_irred T.carrier T.is_irreducible',
@@ -47,6 +47,12 @@ def closure_irred {U : Set X} (U_open : IsOpen U) :
   left_inv      := sorry
   right_inv     := sorry
   map_rel_iff'  := sorry
+
+-- def id_iso {U : Set X} (U_open : IsOpen U) :
+--     RelIso (α := Set U)
+--            (β := )
+--            (LT.lt) (LT.lt) where
+
 
 lemma closure_strict_mono_on_irreducible_closed {U : Set X} {A B : IrreducibleCloseds U} (r : A < B) :
     (closure A.carrier) < (closure B) :=
@@ -85,9 +91,6 @@ lemma iSup_in_eq_sSup_image {A : Set X} (f : X → ℕ∞) :
     (⨆ x ∈ A, f x) = sSup (f '' A) := by
   rw [sSup_image]
 
-lemma iSup_type_eq_sSup_image {A : Set X} (f : X → ℕ∞) :
-    (⨆ x : X, f x) = sSup (f '' A) := by
-  rw [sSup_image]
 
 
 lemma supremum_bijection_preserving {A : Set X} {B : Set X}
@@ -147,10 +150,8 @@ lemma length_equiv_inv {r: Rel (Set X) (Set X)}{a b : Set X} {s : Rel (Set X) (S
     simp [reduce]
     sorry
 
--- def equiv {β : Type*}{α: Type*}{r: Rel α α} {s : Rel β β} (e: r ≃r s) {a b : α} :  a -[r]→* b ≃ (e a) -[s]→* (e b)  where
 
-
-lemma eCodim_equiv_inv  {a b : Set X} (e : RelIso (LT.lt : Set X → Set X → Prop) (LT.lt : Set X → Set X → Prop)):
+lemma eCodim_equiv_inv {a b : Set X} (e : RelIso (LT.lt : Set X → Set X → Prop) (LT.lt : Set X → Set X → Prop)):
     eCodim a b = eCodim (e a) (e b):= by
   unfold eCodim
   unfold Rel.eCodim
@@ -159,47 +160,37 @@ lemma eCodim_equiv_inv  {a b : Set X} (e : RelIso (LT.lt : Set X → Set X → P
   rw [←length_equiv_inv]
 
 
--- lemma eCodim_equiv_inv2  {a b : Set X} (e : RelIso (α := X) (β:= X) (· < ·) (· < ·)):
---     eCodim a b = eCodim (e a) (e b):= by
---   unfold eCodim
---   unfold Rel.eCodim
---   apply Equiv.iSup_congr
---   intro x
---   rw [←length_equiv_inv]
+lemma eCodim_equiv_inv_irr' {U : Set X} (U_open : IsOpen U) (e_map :RelIso (α := IrreducibleCloseds U)
+    (β := {s : IrreducibleCloseds X // (U ∩ s).Nonempty})
+    (LT.lt) (LT.lt)) (a_sub b_sub : {s : IrreducibleCloseds X // (U ∩ s).Nonempty}) :
+  eCodim a_sub b_sub = eCodim (e_map.symm a_sub) (e_map.symm b_sub) := by
+  sorry
+
+lemma eCodim_subtype_equiv_val {U: Set X}
+    (s1 : {s : IrreducibleCloseds X // (U ∩ s).Nonempty})
+    (s2 : {s : IrreducibleCloseds X // (U ∩ s).Nonempty}) :
+    eCodim s1 s2 = eCodim s1.val s2.val := by
+
+  unfold eCodim
+  unfold Rel.eCodim
+  apply Equiv.iSup_congr
+  intro x
+  sorry
+  sorry
 
 
 
 
--- this is the theorem 5.11.2 to prove
-theorem codimension_theorem [TopologicalSpace X]
-    {U : Set X} (Y : IrreducibleCloseds X) (hU : IsOpen U) (hi : (U ∩ Y).Nonempty) :
-    codim Y = codim (X:=U) (irr_closed_restrict Y hU hi):= by
-  rw [codim_eq_sup_nonempty Y hi]
+
+theorem codimension_theorem2
+    {U : Set X} (Y : {s : IrreducibleCloseds X // (U ∩ s).Nonempty}) (hU : IsOpen U) (hi : (U ∩ Y).Nonempty) :
+    codim Y.1 = codim (X:=U) ((closure_irred hU).symm ⟨Y, hi⟩ ):= by
+  rw [codim_eq_sup_nonempty Y.1 hi]
 
   dsimp [codim]
 
   apply Equiv.iSup_congr (closure_irred hU).toEquiv.symm
   simp
-  intro a ha
-  sorry
-  -- rw [←eCodim_equiv_inv  (iso_eCodim_preserving hU (closure_irred hU) _)]
-  -- rw [iso_eCodim_preserving hU (closure_irred hU)
-        -- (irr_closed_restrict Y hU hi)]
-
-
-theorem codimension_theorem2 [TopologicalSpace X]
-    {U : Set X} (Y : IrreducibleCloseds X) (hU : IsOpen U) (hi : (U ∩ Y).Nonempty) :
-    codim Y = codim (X:=U) ((closure_irred hU).invFun ⟨Y, hi⟩ ):= by
-  rw [codim_eq_sup_nonempty Y hi]
-
-  dsimp [codim]
-
-  apply Equiv.iSup_congr (closure_irred hU).toEquiv.symm
-  simp
-  intro a ha
-  #check (closure_irred hU)
-
-  #check eCodim_equiv_inv (closure_irred hU)
-
-  sorry
-  -- rw [←eCodim_equiv_inv closure_irred ]
+  intro a_sub _ha
+  rw [← eCodim_subtype_equiv_val Y ⟨a_sub, _ha⟩]
+  apply (eCodim_equiv_inv_irr' hU (closure_irred hU) ⟨Y, hi⟩ ⟨a_sub, _ha⟩).symm
