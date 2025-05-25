@@ -862,6 +862,11 @@ def equiv {β : Type*}{α: Type*}{r: Rel α α} {s : Rel β β} (e: r ≃r s) {a
       simp
       sorry
   right_inv := sorry
+
+def coe_subtype {p : α → Prop} {ap bp : {a : α // p a}} : ap -[fun ap bp : {a : α // p a} ↦ r ap bp]→* bp → ap -[r]→* bp
+  | .singleton ap => .singleton ap.val
+  | .cons ap l h => .cons ap.val (coe_subtype l) h
+
 end equiv
 
 section mem
