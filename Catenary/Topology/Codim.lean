@@ -41,7 +41,11 @@ def closure_irred {U : Set X} (U_open : IsOpen U) :
       isClosed_closure⟩, by
       obtain ⟨x, h⟩ := T.is_irreducible'.left
       use x
-      sorry
+        simp only [IrreducibleCloseds.coe_mk, Set.mem_inter_iff, Subtype.coe_prop, true_and]
+        apply subset_closure
+        simp only [Set.mem_image, Subtype.exists, exists_and_right, exists_eq_right,
+          Subtype.coe_eta, Subtype.coe_prop, exists_const]
+        exact h
     ⟩
   invFun Y := irr_closed_restrict Y U_open Y.prop
   left_inv      := sorry
