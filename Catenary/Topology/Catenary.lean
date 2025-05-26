@@ -28,7 +28,9 @@ lemma isCatenary_of_iso_isCatenary {X Y : Type} [TopologicalSpace X] [Topologica
   intro x
   sorry⟩
 
--- lemma 5.11.5 part 1
+/--
+Being catenary is equivalent to having an open cover of catenary spaces. This is the main part of lemma 5.11.5 on stacks.
+-/
 lemma catenary_iff_catenary_cover : IsCatenaryTopologicalSpace X ↔ ∃ ι : Type, ∃ u : ι → Opens X, IsOpenCover u ∧ ∀ i : ι, IsCatenaryTopologicalSpace (u i) := by
   constructor
   · intro h
@@ -83,27 +85,16 @@ lemma catenary_iff_catenary_cover : IsCatenaryTopologicalSpace X ↔ ∃ ι : Ty
       obtain ⟨yui, hui⟩ := h xui
       have : Function.RightInverse (closure_irred (u i).is_open').invFun (closure_irred (u i).is_open') := (closure_irred (u i).is_open').right_inv
       let y' := copy (order_iso (closure_irred (u i).is_open') yui) (this _) (this _)
-      -- let x := y'
-      -- let y'' := copy y' (this _) (this _)
-      -- rw [this, this] at y'
-      -- let y := @coe_subtype (IrreducibleCloseds X) (r := (· < ·)) (p := fun T ↦ ((u i : Set X) ∩ T).Nonempty) _ _ y'
       use @coe_subtype (IrreducibleCloseds X) (r := (· < ·)) (p := fun T ↦ ((u i : Set X) ∩ T).Nonempty) _ _ y'
       use isReduced_of_irrefl _
       constructor
       · unfold y'
         have : x = @coe_subtype (IrreducibleCloseds X) (r := (· < ·)) (p := fun T ↦ ((u i : Set X) ∩ T).Nonempty) _ _ (copy (order_iso (closure_irred (u i).is_open') xui) (this _) (this _)) := sorry
         rw [this]
-        -- have {TU TU' : {s : IrreducibleCloseds X // ((u i : Set X) ∩ s).Nonempty}} {x y : TU -[LT.lt]→* TU'} : x.coe_subtype ≤ y.coe_subtype ↔ x ≤ y := sorry
         sorry
       · unfold y'
         rw [length_coe_subtype_eq_length, length_copy, length_order_iso (closure_irred (u i).is_open')]
         exact hui.2.2
-      -- rw [← closure_irred_T] at x
-      -- have := (order_iso (closure_irred (u i).is_open')).map_rel_iff'.mpr
-      -- apply (order_iso (closure_irred (u i).is_open')).map_rel_iff'.mpr
-
--- lemma 5.11.5 part 2
-lemma locally_closed_subspace_catenary_of_catenary : IsCatenaryTopologicalSpace X → ∀ Y : Set X, IsLocallyClosed Y → IsCatenaryTopologicalSpace Y := sorry
 
 /--
 A topological space is irreducibly Noetherian if and only if the irreducibles satisfy the descending chain condition.

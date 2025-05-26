@@ -62,18 +62,6 @@ def closure_irred {U : Set X} (U_open : IsOpen U) :
 def copy_inter {T T': IrreducibleCloseds X} (hT : (U ∩ ↑T).Nonempty) (hT' : (U ∩ ↑T').Nonempty) :
   T -[(· < ·)]→* T' →
     Subtype.mk (p := fun T : IrreducibleCloseds X ↦ (U ∩ ↑T).Nonempty) T hT -[(· < ·)]→* (Subtype.mk (p := fun T : IrreducibleCloseds X ↦ (U ∩ ↑T).Nonempty) T' hT') := sorry
-  -- | RelSeriesHT.singleton T => by
-    -- subst hT
-    -- rw [← Subtype.ext hT']
-    -- exact singleton TU
-  -- | cons _ (b := T'') l h => by
-  --   simp at h
-  --   have : (↑T'' ∩ U).Nonempty := by
-  --     obtain ⟨x, hx⟩ := TU.prop
-  --     exact ⟨x, Set.mem_of_mem_of_subset hx (by apply Set.inter_subset_inter_left U; rw [← hT]; exact le_of_lt h)⟩
-  --   let TU'' : {T : IrreducibleCloseds X // (↑T ∩ U).Nonempty} := ⟨T'', this⟩
-  --   have hT'' : T'' = TU'' := rfl
-  --   exact cons TU (copy_inter hT'' hT' l) (by simp_all)
 
 lemma length_copy_inter_eq_length {T T': IrreducibleCloseds X} (hT : (U ∩ ↑T).Nonempty) (hT' : (U ∩ ↑T').Nonempty) (x : T -[(· < ·)]→* T') : (copy_inter hT hT' x).length = x.length := sorry
 
@@ -203,7 +191,6 @@ lemma eCodim_subtype_equiv_val {U: Set X}
   intro x
   sorry
   sorry
-  sorry
 
 
 
@@ -219,4 +206,3 @@ theorem codimension_theorem2
   intro a_sub _ha
   rw [← eCodim_subtype_equiv_val Y ⟨a_sub, _ha⟩]
   apply (eCodim_equiv_inv_irr' hU (closure_irred hU) ⟨Y, hi⟩ ⟨a_sub, _ha⟩).symm
-
