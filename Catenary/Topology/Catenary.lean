@@ -16,12 +16,10 @@ namespace TopologicalSpace
 
 variable (X : Type) [TopologicalSpace X]
 
-notation "∞" => ⊤
-
 abbrev IsCatenaryTopologicalSpace := IsCatenaryOrder (IrreducibleCloseds X)
 abbrev IsIrreduciblyNoetherianTopologicalSpace := IsDiscreteOrder (IrreducibleCloseds X)
 
-noncomputable def top_open_iso_univ : (⊤ : Opens X) ≃ₜ X := IsEmbedding.toHomeomorph_of_surjective Topology.IsEmbedding.subtypeVal (by intro x; use ⟨x, trivial⟩)
+noncomputable def top_open_homeo_univ : (⊤ : Opens X) ≃ₜ X := IsEmbedding.toHomeomorph_of_surjective Topology.IsEmbedding.subtypeVal (by intro x; use ⟨x, trivial⟩)
 
 lemma isCatenary_of_iso_isCatenary {X Y : Type} [TopologicalSpace X] [TopologicalSpace Y] (Y_catenary : IsCatenaryTopologicalSpace Y) (φ : X ≃ₜ Y) : IsCatenaryTopologicalSpace X := ⟨by
   intro T T'
@@ -38,7 +36,7 @@ lemma catenary_iff_catenary_cover : IsCatenaryTopologicalSpace X ↔ ∃ ι : Ty
     constructor
     · simp only [IsOpenCover, Finset.range_one, ciSup_unique]
     · simp only [Finset.range_one, Finset.mem_singleton, forall_const]
-      exact isCatenary_of_iso_isCatenary h (top_open_iso_univ X)
+      exact isCatenary_of_iso_isCatenary h (top_open_homeo_univ X)
   · intro exists_cat_cov
     constructor
     intro T T'
@@ -46,7 +44,6 @@ lemma catenary_iff_catenary_cover : IsCatenaryTopologicalSpace X ↔ ∃ ι : Ty
     · simp
       use 0
       intro x
-      -- rw [← h] at x
       use x, (by rfl)
       subst h
       match x with
@@ -57,22 +54,8 @@ lemma catenary_iff_catenary_cover : IsCatenaryTopologicalSpace X ↔ ∃ ι : Ty
           subst hT2b
           exact lt_irrefl T2 Tltb
         have := le_of_lt (lt_of_relSeriesHT this.symm l)
-        -- have :=  this
         have := Tltb.right
         contradiction
-        --rw [LT.lt] at Tltb--simp; have : T < T' := by sorry; rw [h] at this; exact lt_irrefl T' this --lt_trans Tltb (lt_of_relSeriesHT)
-      -- have : x = singleton T := by
-      --   match x with
-      --   | RelSeriesHT.singleton T => rfl
-      --   | RelSeriesHT.cons T l Tltb => rw [← h] at x; sorry--have : T < T := lt_of_relSeriesHT
-      -- nth_rw 2 [h] at x -- why do I constantly have to rewrite x?
-      -- use x
-      -- constructor
-      -- · constructor
-      --   intro y xley
-
-      -- have : T < T' := lt_of_relSeriesHT x
-
     · push_neg at h
       by_cases TltT' : ¬ T < T'
       · use 0
@@ -87,7 +70,6 @@ lemma catenary_iff_catenary_cover : IsCatenaryTopologicalSpace X ↔ ∃ ι : Ty
         use i, t
         constructor <;> assumption
       obtain ⟨i, ui_inter⟩ := this
-      -- obtain h := (ui_cat i).isCatenary
       have ui_inter' : ((u i : Set X) ∩ T').Nonempty := by
         obtain ⟨x, x_mem⟩ := ui_inter
         use x, x_mem.left
@@ -95,15 +77,8 @@ lemma catenary_iff_catenary_cover : IsCatenaryTopologicalSpace X ↔ ∃ ι : Ty
         simp only [SetLike.coe_subset_coe]
         exact le_of_lt TltT'
       obtain ⟨n, h⟩ := (ui_cat i).isCatenary ((closure_irred (u i).is_open').invFun ⟨T, ui_inter⟩) ((closure_irred (u i).is_open').invFun ⟨T', ui_inter'⟩) -- can use properties of closure_irred for this?
-      -- obtain ⟨n, h⟩ := (ui_cat i).isCatenary ((closure_irred (u i).is_open').invFun ⟨T, by obtain ⟨x, x_mem⟩ := ui_inter; simp at x_mem; use ⟨x, x_mem.left⟩; simp; exact x_mem.right⟩) ((closure_irred (u i).is_open').invFun ⟨T', by obtain ⟨x, x_mem⟩ := ui_inter; simp at x_mem; use ⟨x, x_mem.left⟩; simp; exact mem_of_mem_of_subset x_mem.right (by simp; exact TltT'.left)⟩) -- can use properties of closure_irred for this?
       use n
       intro x
-      -- have ui_: ((u i : Set X) ∩ T).Nonempty := by obtain ⟨x, x_mem⟩ := ui_inter; use x
-      -- have : T = closure_irred (u i).is_open' ((closure_irred (u i).is_open').invFun ⟨T, by obtain ⟨x, x_mem⟩ := ui_inter; simp at x_mem; use ⟨x, x_mem.left⟩; simp; exact x_mem.right⟩) := by
-      --   simp [(closure_irred (u i).is_open').right_inv' ⟨T, by obtain ⟨x, x_mem⟩ := ui_inter; simp at x_mem; use ⟨x, x_mem.left⟩; simp; exact x_mem.right⟩]
-      --   sorry
-      -- simp [closure_irred] at h
-      -- obtain ⟨y, h⟩ := h x
       let xui := (order_iso (closure_irred (u i).is_open').symm (copy_inter ui_inter ui_inter' x))
       simp [closure_irred, irr_closed_restrict] at xui
       obtain ⟨yui, hui⟩ := h xui
@@ -129,7 +104,7 @@ lemma locally_closed_subspace_catenary_of_catenary : IsCatenaryTopologicalSpace 
 /--
 A topological space is irreducibly Noetherian if and only if the irreducibles satisfy the descending chain condition.
 -/
-lemma irreducibly_noetherian_iff_codim_lt_infty : IsIrreduciblyNoetherianTopologicalSpace X ↔ ∀ Y Y' : IrreducibleCloseds X, eCodim Y Y' < ∞ := RelSeriesHT.isDiscrete_iff_forall_eCodim_lt_top
+lemma irreducibly_noetherian_iff_codim_lt_infty : IsIrreduciblyNoetherianTopologicalSpace X ↔ ∀ Y Y' : IrreducibleCloseds X, eCodim Y Y' < ⊤ := RelSeriesHT.isDiscrete_iff_forall_eCodim_lt_top
 
 /--
 A topological space is catenary if and only if it is irreducibly Noetherian and satisfies the dimension formula.
