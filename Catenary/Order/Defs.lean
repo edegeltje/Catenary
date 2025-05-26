@@ -7,16 +7,16 @@ abbrev IsDiscreteOrder (α : Type*) [Preorder α] : Prop := Rel.IsDiscrete (LT.l
 noncomputable def eCodim {α : Type*} [Preorder α] (a b : α) : WithBot ℕ∞ := Rel.eCodim LT.lt a b
 
 lemma lt_of_relSeriesHT {α : Type*} [Preorder α] {a b : α} (h : a ≠ b) : a -[LT.lt]→* b → a < b
-    | RelSeriesHT.singleton a => by
-        contradiction
+  | RelSeriesHT.singleton a => by
+    contradiction
     | RelSeriesHT.cons a (b := c) l altc => by
-        apply lt_trans altc
-        match l with
-        | RelSeriesHT.singleton b => exfalso; sorry -- why does this not give me the hypothesis that l is a singleton?
-        | RelSeriesHT.cons c l h => sorry -- why does this keep making new variables????
+      by_cases hcb : c = b
+      · subst hcb
+        exact altc
+      · apply lt_trans altc
+        exact lt_of_relSeriesHT hcb l
 
-        -- exact lt_of_relSeriesHT sorry l
-
+<<<<<<< HEAD
 lemma isSingleton_if {α : Type*}{a : α}[Preorder α](x : a -[(·<·)]→* a ): x = RelSeriesHT.singleton a := by
   match x with
   | RelSeriesHT.singleton a => rfl
@@ -76,3 +76,7 @@ lemma isCatenaryOrder_iff_isDiscreteOrder_and_dimension_formula (α : Type*) [P:
         push_neg at he₃
         exact he₃
         exact h'bc
+=======
+lemma isCatenaryOrder_iff_isDiscreteOrder_and_dimension_formula (α : Type*) [Preorder α]: IsCatenaryOrder α ↔ IsDiscreteOrder α ∧
+  ∀ {a b c: α }, a < b → b < c →  eCodim a b + eCodim b c = eCodim a c := sorry
+>>>>>>> 97b2f0ce7c9363fae1fa309aeb837925f320be0b
