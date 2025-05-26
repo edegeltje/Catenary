@@ -58,6 +58,7 @@ def closure_irred {U : Set X} (U_open : IsOpen U) :
 --            (LT.lt) (LT.lt) where
 
 
+
 def copy_inter {T T': IrreducibleCloseds X} (hT : (U ∩ ↑T).Nonempty) (hT' : (U ∩ ↑T').Nonempty) :
   T -[(· < ·)]→* T' →
     Subtype.mk (p := fun T : IrreducibleCloseds X ↦ (U ∩ ↑T).Nonempty) T hT -[(· < ·)]→* (Subtype.mk (p := fun T : IrreducibleCloseds X ↦ (U ∩ ↑T).Nonempty) T' hT') := sorry
@@ -162,8 +163,10 @@ lemma codim_eq_sup_nonempty {U: Set X} (Y: IrreducibleCloseds X) (hU: (U ∩ Y).
   sorry
 
 -- prove that length is preserved under Rel equiv
+
 lemma length_order_iso_inv {r: Rel (Set X) (Set X)}{a b : Set X} {s : Rel (Set X) (Set X)} (e: r ≃r s) (x : a -[r]→* b):
   x.reduce.length = ((order_iso e).toEquiv x).reduce.length := by
+
   cases x
   case singleton =>
     simp
@@ -200,8 +203,7 @@ lemma eCodim_subtype_equiv_val {U: Set X}
   intro x
   sorry
   sorry
-
-
+  sorry
 
 
 
@@ -217,3 +219,4 @@ theorem codimension_theorem2
   intro a_sub _ha
   rw [← eCodim_subtype_equiv_val Y ⟨a_sub, _ha⟩]
   apply (eCodim_equiv_inv_irr' hU (closure_irred hU) ⟨Y, hi⟩ ⟨a_sub, _ha⟩).symm
+
