@@ -80,20 +80,24 @@ lemma catenary_iff_catenary_cover : IsCatenaryTopologicalSpace X ↔ ∃ ι : Ty
       use n
       intro x
       let xui := (order_iso (closure_irred (u i).is_open').symm (copy_inter ui_inter ui_inter' x))
-      simp [closure_irred, irr_closed_restrict] at xui
       obtain ⟨yui, hui⟩ := h xui
-      simp [closure_irred, irr_closed_restrict] at yui
-      let y' := order_iso (closure_irred (u i).is_open') yui
-      simp [closure_irred] at y'
-      let y := @coe_subtype (IrreducibleCloseds X) (r := (· < ·)) (p := fun T ↦ ((u i : Set X) ∩ T).Nonempty) _ _ y'
-      have closure_irred_T : closure (X := X) ((u i : Set X) ↓∩ T) = T := sorry
-      have closure_irred_T' : closure (X := X) ((u i : Set X) ↓∩ T') = T' := sorry
-      simp [closure_irred_T, closure_irred_T'] at y
-      use y
-      use isReduced_of_irrefl y
+      have : Function.RightInverse (closure_irred (u i).is_open').invFun (closure_irred (u i).is_open') := (closure_irred (u i).is_open').right_inv
+      let y' := copy (order_iso (closure_irred (u i).is_open') yui) (this _) (this _)
+      -- let x := y'
+      -- let y'' := copy y' (this _) (this _)
+      -- rw [this, this] at y'
+      -- let y := @coe_subtype (IrreducibleCloseds X) (r := (· < ·)) (p := fun T ↦ ((u i : Set X) ∩ T).Nonempty) _ _ y'
+      use @coe_subtype (IrreducibleCloseds X) (r := (· < ·)) (p := fun T ↦ ((u i : Set X) ∩ T).Nonempty) _ _ y'
+      use isReduced_of_irrefl _
       constructor
-      · sorry
-      · sorry
+      · unfold y'
+        have : x = @coe_subtype (IrreducibleCloseds X) (r := (· < ·)) (p := fun T ↦ ((u i : Set X) ∩ T).Nonempty) _ _ (copy (order_iso (closure_irred (u i).is_open') xui) (this _) (this _)) := sorry
+        rw [this]
+        -- have {TU TU' : {s : IrreducibleCloseds X // ((u i : Set X) ∩ s).Nonempty}} {x y : TU -[LT.lt]→* TU'} : x.coe_subtype ≤ y.coe_subtype ↔ x ≤ y := sorry
+        sorry
+      · unfold y'
+        rw [length_coe_subtype_eq_length, length_copy, length_order_iso (closure_irred (u i).is_open')]
+        exact hui.2.2
       -- rw [← closure_irred_T] at x
       -- have := (order_iso (closure_irred (u i).is_open')).map_rel_iff'.mpr
       -- apply (order_iso (closure_irred (u i).is_open')).map_rel_iff'.mpr

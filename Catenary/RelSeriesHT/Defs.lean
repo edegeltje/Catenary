@@ -1003,7 +1003,6 @@ def order_iso {β : Type*}{α: Type*}{r: Rel α α} {s : Rel β β} (e: r ≃r s
     map (a := a) (b := b) (r := r) (s := s)  e.toRelEmbedding
   invFun x:=
     (map (a := e a) (b:= e b) (s := r) (r := s) e.symm.toRelEmbedding x).copy (by apply Equiv.symm_apply_apply) (by apply Equiv.symm_apply_apply)
-
   left_inv := by
     intro x
     cases x
@@ -1026,6 +1025,8 @@ def order_iso {β : Type*}{α: Type*}{r: Rel α α} {s : Rel β β} (e: r ≃r s
       · sorry
   right_inv := sorry
   map_rel_iff' := sorry
+
+lemma length_order_iso {β : Type*}{α: Type*}{r: Rel α α} {s : Rel β β} (e: r ≃r s) {a b : α} {x : a -[r]→* b} : ((order_iso e) x).length = x.length := sorry
 
 lemma exists_eq_append_of_append_le {a b c : α}
   (x : a -[r]→* b) (y : b -[r]→* c) (z : a -[r]→* c) (h : (x ++ y) ≤ z) :
