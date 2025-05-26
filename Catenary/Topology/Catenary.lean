@@ -10,7 +10,7 @@ import Catenary.RelSeriesHT.Codim
 import Catenary.Order.Defs
 import Catenary.Topology.Codim
 
-open TopologicalSpace Rel RelSeriesHT ENat Set Topology Homeomorph
+open TopologicalSpace Rel RelSeriesHT ENat Set Topology Homeomorph Set.Notation
 
 namespace TopologicalSpace
 
@@ -23,7 +23,12 @@ abbrev IsIrreduciblyNoetherianTopologicalSpace := IsDiscreteOrder (IrreducibleCl
 
 noncomputable def top_open_iso_univ : (⊤ : Opens X) ≃ₜ X := IsEmbedding.toHomeomorph_of_surjective Topology.IsEmbedding.subtypeVal (by intro x; use ⟨x, trivial⟩)
 
-lemma isCatenary_of_iso_isCatenary {X Y : Type} [TopologicalSpace X] [TopologicalSpace Y] (Y_catenary : IsCatenaryTopologicalSpace Y) (φ : X ≃ₜ Y) : IsCatenaryTopologicalSpace X := ⟨by intro T T'; obtain ⟨n, h⟩ := Y_catenary.isCatenary ⟨(φ '' T), sorry, sorry⟩ ⟨(φ '' T'), sorry, sorry⟩; use n; intro x; sorry⟩
+lemma isCatenary_of_iso_isCatenary {X Y : Type} [TopologicalSpace X] [TopologicalSpace Y] (Y_catenary : IsCatenaryTopologicalSpace Y) (φ : X ≃ₜ Y) : IsCatenaryTopologicalSpace X := ⟨by
+  intro T T'
+  obtain ⟨n, h⟩ := Y_catenary.isCatenary ⟨(φ '' T), sorry, sorry⟩ ⟨(φ '' T'), sorry, sorry⟩
+  use n
+  intro x
+  sorry⟩
 
 -- lemma 5.11.5 part 1
 lemma catenary_iff_catenary_cover : IsCatenaryTopologicalSpace X ↔ ∃ ι : Type, ∃ u : ι → Opens X, IsOpenCover u ∧ ∀ i : ι, IsCatenaryTopologicalSpace (u i) := by
@@ -82,15 +87,41 @@ lemma catenary_iff_catenary_cover : IsCatenaryTopologicalSpace X ↔ ∃ ι : Ty
         use i, t
         constructor <;> assumption
       obtain ⟨i, ui_inter⟩ := this
-      obtain ⟨n, h⟩ := (ui_cat i).isCatenary ((closure_irred (u i).is_open').invFun ⟨T, by obtain ⟨x, x_mem⟩ := ui_inter; simp at x_mem; use ⟨x, x_mem.left⟩; simp; exact x_mem.right⟩) ((closure_irred (u i).is_open').invFun ⟨T', by obtain ⟨x, x_mem⟩ := ui_inter; simp at x_mem; use ⟨x, x_mem.left⟩; simp; exact mem_of_mem_of_subset x_mem.right (by simp; exact TltT'.left)⟩) -- can use properties of closure_irred for this?
+      -- obtain h := (ui_cat i).isCatenary
+      have ui_inter' : ((u i : Set X) ∩ T').Nonempty := by
+        obtain ⟨x, x_mem⟩ := ui_inter
+        use x, x_mem.left
+        apply mem_of_mem_of_subset x_mem.right
+        simp only [SetLike.coe_subset_coe]
+        exact le_of_lt TltT'
+      obtain ⟨n, h⟩ := (ui_cat i).isCatenary ((closure_irred (u i).is_open').invFun ⟨T, ui_inter⟩) ((closure_irred (u i).is_open').invFun ⟨T', ui_inter'⟩) -- can use properties of closure_irred for this?
+      -- obtain ⟨n, h⟩ := (ui_cat i).isCatenary ((closure_irred (u i).is_open').invFun ⟨T, by obtain ⟨x, x_mem⟩ := ui_inter; simp at x_mem; use ⟨x, x_mem.left⟩; simp; exact x_mem.right⟩) ((closure_irred (u i).is_open').invFun ⟨T', by obtain ⟨x, x_mem⟩ := ui_inter; simp at x_mem; use ⟨x, x_mem.left⟩; simp; exact mem_of_mem_of_subset x_mem.right (by simp; exact TltT'.left)⟩) -- can use properties of closure_irred for this?
       use n
       intro x
-      have ui_: ((u i : Set X) ∩ T).Nonempty := by obtain ⟨x, x_mem⟩ := ui_inter; use x
-      have : T = closure_irred (u i).is_open' ((closure_irred (u i).is_open').invFun ⟨T, by obtain ⟨x, x_mem⟩ := ui_inter; simp at x_mem; use ⟨x, x_mem.left⟩; simp; exact x_mem.right⟩) := by
-        simp [(closure_irred (u i).is_open').right_inv' ⟨T, by obtain ⟨x, x_mem⟩ := ui_inter; simp at x_mem; use ⟨x, x_mem.left⟩; simp; exact x_mem.right⟩]
-        sorry
-      simp [closure_irred] at h
-      obtain ⟨y, h⟩ := h x
+      -- have ui_: ((u i : Set X) ∩ T).Nonempty := by obtain ⟨x, x_mem⟩ := ui_inter; use x
+      -- have : T = closure_irred (u i).is_open' ((closure_irred (u i).is_open').invFun ⟨T, by obtain ⟨x, x_mem⟩ := ui_inter; simp at x_mem; use ⟨x, x_mem.left⟩; simp; exact x_mem.right⟩) := by
+      --   simp [(closure_irred (u i).is_open').right_inv' ⟨T, by obtain ⟨x, x_mem⟩ := ui_inter; simp at x_mem; use ⟨x, x_mem.left⟩; simp; exact x_mem.right⟩]
+      --   sorry
+      -- simp [closure_irred] at h
+      -- obtain ⟨y, h⟩ := h x
+      let xui := (order_iso (closure_irred (u i).is_open').symm (copy_inter ui_inter ui_inter' x))
+      simp [closure_irred, irr_closed_restrict] at xui
+      obtain ⟨yui, hui⟩ := h xui
+      simp [closure_irred, irr_closed_restrict] at yui
+      let y' := order_iso (closure_irred (u i).is_open') yui
+      simp [closure_irred] at y'
+      let y := @coe_subtype (IrreducibleCloseds X) (r := (· < ·)) (p := fun T ↦ ((u i : Set X) ∩ T).Nonempty) _ _ y'
+      have closure_irred_T : closure (X := X) ((u i : Set X) ↓∩ T) = T := sorry
+      have closure_irred_T' : closure (X := X) ((u i : Set X) ↓∩ T') = T' := sorry
+      simp [closure_irred_T, closure_irred_T'] at y
+      use y
+      use isReduced_of_irrefl y
+      constructor
+      · sorry
+      · sorry
+      -- rw [← closure_irred_T] at x
+      -- have := (order_iso (closure_irred (u i).is_open')).map_rel_iff'.mpr
+      -- apply (order_iso (closure_irred (u i).is_open')).map_rel_iff'.mpr
 
 -- lemma 5.11.5 part 2
 lemma locally_closed_subspace_catenary_of_catenary : IsCatenaryTopologicalSpace X → ∀ Y : Set X, IsLocallyClosed Y → IsCatenaryTopologicalSpace Y := sorry
