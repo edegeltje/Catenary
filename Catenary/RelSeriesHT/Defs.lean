@@ -135,6 +135,9 @@ lemma length_singleton (a : α) : (singleton (r := r) a).length = 0 := rfl
 lemma length_cons (a : α) {b b' : α} (l : b -[r]→* b') (hab : r a b) :
   (l.cons a hab).length = l.length + 1 := rfl
 
+lemma length_nonneg {a b : α} (x : a -[r]→* b) : 0 ≤ x.length := by
+  cases x <;> simp_all
+
 lemma length_pos_of_ne {a b : α} (hne : a ≠ b) (x : a -[r]→* b) :
   0 < x.length := by
   cases x <;> simp_all
@@ -820,6 +823,58 @@ lemma toList_map {β : Type*} {s : Rel β β} (f : r →r s) {a b : α} (x : a -
 
 end map
 
+
+section MapProperties
+variable {α β γ : Type*} {r : Rel α α} {s : Rel β β} {t : Rel γ γ}
+
+@[simp]
+lemma map_map (g_hom : s →r t) (f_hom : r →r s) {a₁ b₁ : α} (x : a₁ -[r]→* b₁) :
+    RelSeriesHT.map g_hom (RelSeriesHT.map f_hom x) = RelSeriesHT.map (RelHom.comp g_hom f_hom) x := by
+  induction x with
+  | singleton a => simp only [map_singleton, RelHom.comp_apply]
+  | cons a l hab ih => simp only [map_cons, RelHom.comp_apply, ih, RelHom.map_rel]
+
+
+end MapProperties
+
+section coe_subtype
+
+def coe_subtype {p : α → Prop} {ap bp : {a : α // p a}} : ap -[fun ap bp : {a : α // p a} ↦ r ap bp]→* bp → ap -[r]→* bp
+  | .singleton ap => .singleton ap.val
+  | .cons ap l h => .cons ap.val (coe_subtype l) h
+
+lemma length_coe_subtype_eq_length {p : α → Prop} {ap bp : {a : α // p a}} {x : ap -[fun ap bp : {a : α // p a} ↦ r ap bp]→* bp} :
+  (coe_subtype x).length = x.length := sorry
+
+def equiv {β : Type*}{α: Type*}{r: Rel α α} {s : Rel β β} (e: r ≃r s) {a b : α} :  a -[r]→* b ≃ (e a) -[s]→* (e b)  where
+  toFun :=
+    map (a := a) (b := b) (r := r) (s := s)  e.toRelEmbedding
+  invFun x:=
+    (map (a := e a) (b:= e b) (s := r) (r := s) e.symm.toRelEmbedding x).copy (by apply Equiv.symm_apply_apply) (by apply Equiv.symm_apply_apply)
+
+  left_inv := by
+    intro x
+    cases x
+    case singleton rr  aa =>
+      · simp only [map, copy]
+        refine cast_eq_iff_heq.mpr ?_
+        simp
+        refine heq_comm.mp ?_
+        rw [@RelIso.symm_apply_apply]
+
+    case cons a_orig l_orig h_orig =>
+      simp only [map, copy]
+      refine cast_eq_iff_heq.mpr ?_
+      simp
+      congr
+      · exact symm_inv e a
+      · exact symm_inv e a_orig
+      · exact symm_inv e b
+      · sorry
+      · sorry
+
+  right_inv := sorry
+
 section mem
 
 instance membership {r : Rel α α} {a b : α} : Membership α (a -[r]→* b) :=
@@ -960,6 +1015,45 @@ instance {a b : α} : Preorder (a -[r]→* b) where
   le := RelSeriesHT.le
   le_refl := le_refl
   le_trans a b c := le_trans
+
+lemma symm_inv {β : Type*}{r: Rel α α} {s : Rel β β} (e : r ≃r s)(a : α) : e.symm (e a) = a:= by
+  exact RelIso.symm_apply_apply e a
+
+-- def map2 {β : Type*} {s : Rel β β} (f : r →r s) {a b : α} (x : a -[r]→* b) :
+--     (f a) -[s]→* (f b) := match x with
+--   | .singleton a => .singleton (f a)
+--   | .cons a l hr => .cons (f a) (map f l) (f.map_rel hr)
+
+
+def order_iso {β : Type*}{α: Type*}{r: Rel α α} {s : Rel β β} (e: r ≃r s) {a b : α} :  a -[r]→* b ≃o (e a) -[s]→* (e b) where
+  toFun :=
+    map (a := a) (b := b) (r := r) (s := s)  e.toRelEmbedding
+  invFun x:=
+    (map (a := e a) (b:= e b) (s := r) (r := s) e.symm.toRelEmbedding x).copy (by apply Equiv.symm_apply_apply) (by apply Equiv.symm_apply_apply)
+  left_inv := by
+    intro x
+    cases x
+    case singleton rr  aa =>
+      · simp only [map, copy]
+        refine cast_eq_iff_heq.mpr ?_
+        simp
+        refine heq_comm.mp ?_
+        rw [@RelIso.symm_apply_apply]
+
+    case cons a_orig l_orig h_orig =>
+      simp only [map, copy]
+      refine cast_eq_iff_heq.mpr ?_
+      simp
+      congr
+      · exact symm_inv e a
+      · exact symm_inv e a_orig
+      · exact symm_inv e b
+      · sorry
+      · sorry
+  right_inv := sorry
+  map_rel_iff' := sorry
+
+lemma length_order_iso {β : Type*}{α: Type*}{r: Rel α α} {s : Rel β β} (e: r ≃r s) {a b : α} {x : a -[r]→* b} : ((order_iso e) x).length = x.length := sorry
 
 lemma exists_eq_append_of_append_le {a b c : α}
   (x : a -[r]→* b) (y : b -[r]→* c) (z : a -[r]→* c) (h : (x ++ y) ≤ z) :
