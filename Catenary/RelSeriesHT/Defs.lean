@@ -846,34 +846,7 @@ def coe_subtype {p : α → Prop} {ap bp : {a : α // p a}} : ap -[fun ap bp : {
 lemma length_coe_subtype_eq_length {p : α → Prop} {ap bp : {a : α // p a}} {x : ap -[fun ap bp : {a : α // p a} ↦ r ap bp]→* bp} :
   (coe_subtype x).length = x.length := sorry
 
-def equiv {β : Type*}{α: Type*}{r: Rel α α} {s : Rel β β} (e: r ≃r s) {a b : α} :  a -[r]→* b ≃ (e a) -[s]→* (e b)  where
-  toFun :=
-    map (a := a) (b := b) (r := r) (s := s)  e.toRelEmbedding
-  invFun x:=
-    (map (a := e a) (b:= e b) (s := r) (r := s) e.symm.toRelEmbedding x).copy (by apply Equiv.symm_apply_apply) (by apply Equiv.symm_apply_apply)
-
-  left_inv := by
-    intro x
-    cases x
-    case singleton rr  aa =>
-      · simp only [map, copy]
-        refine cast_eq_iff_heq.mpr ?_
-        simp
-        refine heq_comm.mp ?_
-        rw [@RelIso.symm_apply_apply]
-
-    case cons a_orig l_orig h_orig =>
-      simp only [map, copy]
-      refine cast_eq_iff_heq.mpr ?_
-      simp
-      congr
-      · exact symm_inv e a
-      · exact symm_inv e a_orig
-      · exact symm_inv e b
-      · sorry
-      · sorry
-
-  right_inv := sorry
+end coe_subtype
 
 section mem
 
