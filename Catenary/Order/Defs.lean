@@ -16,7 +16,6 @@ lemma lt_of_relSeriesHT {α : Type*} [Preorder α] {a b : α} (h : a ≠ b) : a 
       · apply lt_trans altc
         exact lt_of_relSeriesHT hcb l
 
-<<<<<<< HEAD
 lemma isSingleton_if {α : Type*}{a : α}[Preorder α](x : a -[(·<·)]→* a ): x = RelSeriesHT.singleton a := by
   match x with
   | RelSeriesHT.singleton a => rfl
@@ -76,7 +75,3 @@ lemma isCatenaryOrder_iff_isDiscreteOrder_and_dimension_formula (α : Type*) [P:
         push_neg at he₃
         exact he₃
         exact h'bc
-=======
-lemma isCatenaryOrder_iff_isDiscreteOrder_and_dimension_formula (α : Type*) [Preorder α]: IsCatenaryOrder α ↔ IsDiscreteOrder α ∧
-  ∀ {a b c: α }, a < b → b < c →  eCodim a b + eCodim b c = eCodim a c := sorry
->>>>>>> 97b2f0ce7c9363fae1fa309aeb837925f320be0b
