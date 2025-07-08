@@ -1,6 +1,6 @@
 import Catenary.RelSeriesHT.Codim
 open scoped RelSeriesHT
-abbrev IsCatenaryOrder (α : Type*) [Preorder α] : Prop := Rel.IsCatenary (LT.lt : Rel α α)
+abbrev  IsCatenaryOrder (α : Type*) [Preorder α] : Prop := Rel.IsCatenary (LT.lt : Rel α α)
 
 abbrev IsDiscreteOrder (α : Type*) [Preorder α] : Prop := Rel.IsDiscrete (LT.lt : Rel α α)
 
@@ -16,7 +16,6 @@ lemma lt_of_relSeriesHT {α : Type*} [Preorder α] {a b : α} (h : a ≠ b) : a 
       · apply lt_trans altc
         exact lt_of_relSeriesHT hcb l
 
-<<<<<<< HEAD
 lemma isSingleton_if {α : Type*}{a : α}[Preorder α](x : a -[(·<·)]→* a ): x = RelSeriesHT.singleton a := by
   match x with
   | RelSeriesHT.singleton a => rfl
@@ -30,6 +29,7 @@ lemma isSingleton_if {α : Type*}{a : α}[Preorder α](x : a -[(·<·)]→* a ):
       exact h
     have := lt_of_relSeriesHT h₁ l
     exact absurd h (lt_asymm this)
+
 
 lemma isCatenaryOrder_iff_isDiscreteOrder_and_dimension_formula (α : Type*) [P: Preorder α]: IsCatenaryOrder α ↔ IsDiscreteOrder α ∧
     ∀ {a b c: α }, (a < b) → (b < c) →  eCodim a b + eCodim b c = eCodim a c := by
@@ -53,18 +53,80 @@ lemma isCatenaryOrder_iff_isDiscreteOrder_and_dimension_formula (α : Type*) [P:
         rw[he₂] at h'bc
         rw[he₁, he₂]
         have h'': Rel.eCodim LT.lt c c = 0 := by
-          sorry
+          unfold Rel.eCodim
+          have h₃: ∀ x: c -[LT.lt]→* c, x.reduce.length = 0 := by
+            intro x
+            have h₆ : x = RelSeriesHT.singleton c := isSingleton_if x
+            have h₄: x.reduce.length = 0 := by
+              rw[h₆]
+              simp only [RelSeriesHT.reduce_singleton, RelSeriesHT.length_singleton]
+            rw[h₄]
+          have h''': h'ab.reduce.length = 0 := by
+            have h₅ : h'ab = RelSeriesHT.singleton c := isSingleton_if h'ab
+            have h₇: h'ab.reduce.length = 0 := by
+              rw[h₅]
+              simp only [RelSeriesHT.reduce_singleton, RelSeriesHT.length_singleton]
+            exact h₇
+          apply le_antisymm
+          · simp only [iSup_le_iff, Nat.cast_nonpos]
+            apply h₃
+          · have h₈ : (↑h'ab.reduce.length : WithBot ℕ∞) = 0 := by
+              rw [h''', Nat.cast_zero]
+            rw[← h₈]
+            exact le_iSup_iff.mpr fun b a ↦ a h'ab
         rw[h'']
         rfl
       · rw[he₁]
+        rw[he₁] at h'ab
         have h'': Rel.eCodim LT.lt b b = 0 := by
-          sorry
+          unfold Rel.eCodim
+          have h₃: ∀ x: b -[LT.lt]→* b, x.reduce.length = 0 := by
+            intro x
+            have h₆ : x = RelSeriesHT.singleton b := isSingleton_if x
+            have h₄: x.reduce.length = 0 := by
+              rw[h₆]
+              simp only [RelSeriesHT.reduce_singleton, RelSeriesHT.length_singleton]
+            rw[h₄]
+          have h''': h'ab.reduce.length = 0 := by
+            have h₅ : h'ab = RelSeriesHT.singleton b := isSingleton_if h'ab
+            have h₇: h'ab.reduce.length = 0 := by
+              rw[h₅]
+              simp only [RelSeriesHT.reduce_singleton, RelSeriesHT.length_singleton]
+            exact h₇
+          apply le_antisymm
+          · simp only [iSup_le_iff, Nat.cast_nonpos]
+            apply h₃
+          · have h₈ : (↑h'ab.reduce.length : WithBot ℕ∞) = 0 := by
+              rw [h''', Nat.cast_zero]
+            rw[← h₈]
+            exact le_iSup_iff.mpr fun b a ↦ a h'ab
         rw[h'']
         rw[zero_add]
     · by_cases he₃ : b = c
       · rw[he₃]
+        rw[he₃] at h'bc
         have h'': Rel.eCodim LT.lt c c = 0 := by
-          sorry
+          unfold Rel.eCodim
+          have h₃: ∀ x: c -[LT.lt]→* c, x.reduce.length = 0 := by
+            intro x
+            have h₆ : x = RelSeriesHT.singleton c := isSingleton_if x
+            have h₄: x.reduce.length = 0 := by
+              rw[h₆]
+              simp only [RelSeriesHT.reduce_singleton, RelSeriesHT.length_singleton]
+            rw[h₄]
+          have h''': h'bc.reduce.length = 0 := by
+            have h₅ : h'bc = RelSeriesHT.singleton c := isSingleton_if h'bc
+            have h₇: h'bc.reduce.length = 0 := by
+              rw[h₅]
+              simp only [RelSeriesHT.reduce_singleton, RelSeriesHT.length_singleton]
+            exact h₇
+          apply le_antisymm
+          · simp only [iSup_le_iff, Nat.cast_nonpos]
+            apply h₃
+          · have h₈ : (↑h'bc.reduce.length : WithBot ℕ∞) = 0 := by
+              rw [h''', Nat.cast_zero]
+            rw[← h₈]
+            exact le_iSup_iff.mpr fun b a ↦ a h'bc
         rw[h'']
         rw[add_zero]
       · apply h'
@@ -76,7 +138,3 @@ lemma isCatenaryOrder_iff_isDiscreteOrder_and_dimension_formula (α : Type*) [P:
         push_neg at he₃
         exact he₃
         exact h'bc
-=======
-lemma isCatenaryOrder_iff_isDiscreteOrder_and_dimension_formula (α : Type*) [Preorder α]: IsCatenaryOrder α ↔ IsDiscreteOrder α ∧
-  ∀ {a b c: α }, a < b → b < c →  eCodim a b + eCodim b c = eCodim a c := sorry
->>>>>>> 97b2f0ce7c9363fae1fa309aeb837925f320be0b
